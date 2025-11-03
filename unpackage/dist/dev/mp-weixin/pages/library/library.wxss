@@ -1,0 +1,115 @@
+
+.library-page.data-v-b5c5788b {
+	min-height: 100vh;
+	background: linear-gradient(135deg, #E6F3FF 0%, #F5F9FF 100%);
+	padding: 20rpx;
+}
+.header.data-v-b5c5788b {
+	text-align: center;
+	margin-bottom: 40rpx;
+}
+.title.data-v-b5c5788b {
+	display: block;
+	font-size: 48rpx;
+	font-weight: bold;
+	color: #1890FF;
+	margin-bottom: 10rpx;
+}
+.subtitle.data-v-b5c5788b {
+	display: block;
+	font-size: 28rpx;
+	color: #666;
+}
+.search-bar.data-v-b5c5788b {
+	margin-bottom: 30rpx;
+}
+.search-input.data-v-b5c5788b {
+	background: #fff;
+	border-radius: 40rpx;
+	padding: 20rpx 30rpx;
+	display: flex;
+	align-items: center;
+	box-shadow: 0 4rpx 20rpx rgba(24, 144, 255, 0.1);
+}
+.search-icon.data-v-b5c5788b {
+	font-size: 32rpx;
+	margin-right: 20rpx;
+	color: #999;
+}
+.input.data-v-b5c5788b {
+	flex: 1;
+	font-size: 28rpx;
+}
+.category-tabs.data-v-b5c5788b {
+	margin-bottom: 30rpx;
+}
+.tabs-scroll.data-v-b5c5788b {
+	white-space: nowrap;
+}
+.tabs.data-v-b5c5788b {
+	display: inline-flex;
+	gap: 20rpx;
+}
+.tab.data-v-b5c5788b {
+	background: #fff;
+	padding: 15rpx 30rpx;
+	border-radius: 30rpx;
+	font-size: 26rpx;
+	color: #666;
+	white-space: nowrap;
+	box-shadow: 0 2rpx 10rpx rgba(24, 144, 255, 0.1);
+}
+.tab.active.data-v-b5c5788b {
+	background: linear-gradient(135deg, #1890FF 0%, #40A9FF 100%);
+	color: white;
+}
+.article-item.data-v-b5c5788b {
+	background: #fff;
+	border-radius: 20rpx;
+	padding: 30rpx;
+	margin-bottom: 20rpx;
+	box-shadow: 0 4rpx 20rpx rgba(24, 144, 255, 0.1);
+}
+.article-header.data-v-b5c5788b {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 20rpx;
+}
+.article-title.data-v-b5c5788b {
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #333;
+	flex: 1;
+	margin-right: 20rpx;
+}
+.article-category.data-v-b5c5788b {
+	font-size: 22rpx;
+	color: #1890FF;
+	background: #E6F3FF;
+	padding: 5rpx 15rpx;
+	border-radius: 15rpx;
+}
+.article-summary.data-v-b5c5788b {
+	font-size: 28rpx;
+	color: #666;
+	line-height: 1.6;
+	margin-bottom: 20rpx;
+	display: block;
+}
+.article-footer.data-v-b5c5788b {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+.read-time.data-v-b5c5788b {
+	font-size: 24rpx;
+	color: #999;
+}
+.read-btn.data-v-b5c5788b {
+	font-size: 26rpx;
+	color: #1890FF;
+	background: #E6F3FF;
+	padding: 10rpx 20rpx;
+	border-radius: 15rpx;
+}

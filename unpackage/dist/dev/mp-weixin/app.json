@@ -1,0 +1,54 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/hole/hole",
+    "pages/ai/ai",
+    "pages/library/library",
+    "pages/mine/mine"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "心屿",
+    "navigationBarBackgroundColor": "#E6F3FF",
+    "backgroundColor": "#F5F9FF"
+  },
+  "tabBar": {
+    "color": "#666666",
+    "selectedColor": "#1890FF",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/icon/home.png",
+        "selectedIconPath": "static/icon/home.png"
+      },
+      {
+        "pagePath": "pages/hole/hole",
+        "text": "树洞",
+        "iconPath": "static/icon/tree-hole.png",
+        "selectedIconPath": "static/icon/tree-hole.png"
+      },
+      {
+        "pagePath": "pages/ai/ai",
+        "text": "AI伙伴",
+        "iconPath": "static/icon/ai-partner.png",
+        "selectedIconPath": "static/icon/ai-partner.png"
+      },
+      {
+        "pagePath": "pages/library/library",
+        "text": "心理库",
+        "iconPath": "static/icon/psychology.png",
+        "selectedIconPath": "static/icon/psychology.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "static/icon/my.png",
+        "selectedIconPath": "static/icon/my.png"
+      }
+    ]
+  },
+  "usingComponents": {}
+}

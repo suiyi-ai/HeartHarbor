@@ -1,0 +1,107 @@
+
+.mine-page.data-v-7c2ebfa5 {
+	min-height: 100vh;
+	background: linear-gradient(135deg, #E6F3FF 0%, #F5F9FF 100%);
+	padding: 20rpx;
+}
+.user-info.data-v-7c2ebfa5 {
+	background: #fff;
+	border-radius: 20rpx;
+	padding: 40rpx 30rpx;
+	margin-bottom: 30rpx;
+	box-shadow: 0 4rpx 20rpx rgba(24, 144, 255, 0.1);
+}
+.avatar-section.data-v-7c2ebfa5 {
+	display: flex;
+	align-items: center;
+	margin-bottom: 40rpx;
+}
+.avatar.data-v-7c2ebfa5 {
+	width: 120rpx;
+	height: 120rpx;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #1890FF 0%, #40A9FF 100%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-right: 30rpx;
+}
+.avatar-text.data-v-7c2ebfa5 {
+	font-size: 50rpx;
+}
+.user-details.data-v-7c2ebfa5 {
+	flex: 1;
+}
+.username.data-v-7c2ebfa5 {
+	display: block;
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 10rpx;
+}
+.user-desc.data-v-7c2ebfa5 {
+	display: block;
+	font-size: 26rpx;
+	color: #666;
+}
+.stats.data-v-7c2ebfa5 {
+	display: flex;
+	justify-content: space-around;
+}
+.stat-item.data-v-7c2ebfa5 {
+	text-align: center;
+}
+.stat-number.data-v-7c2ebfa5 {
+	display: block;
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #1890FF;
+	margin-bottom: 10rpx;
+}
+.stat-label.data-v-7c2ebfa5 {
+	display: block;
+	font-size: 24rpx;
+	color: #999;
+}
+.menu-list.data-v-7c2ebfa5 {
+	background: #fff;
+	border-radius: 20rpx;
+	overflow: hidden;
+	box-shadow: 0 4rpx 20rpx rgba(24, 144, 255, 0.1);
+}
+.menu-item.data-v-7c2ebfa5 {
+	display: flex;
+	align-items: center;
+	padding: 30rpx;
+	border-bottom: 2rpx solid #F5F5F5;
+}
+.menu-item.data-v-7c2ebfa5:last-child {
+	border-bottom: none;
+}
+.menu-icon.data-v-7c2ebfa5 {
+	font-size: 36rpx;
+	margin-right: 20rpx;
+	width: 60rpx;
+}
+.menu-text.data-v-7c2ebfa5 {
+	flex: 1;
+	font-size: 30rpx;
+	color: #333;
+}
+.menu-arrow.data-v-7c2ebfa5 {
+	font-size: 36rpx;
+	color: #999;
+}
+.logout-section.data-v-7c2ebfa5 {
+	margin-top: 40rpx;
+	padding: 0 30rpx;
+}
+.logout-btn.data-v-7c2ebfa5 {
+	width: 100%;
+	height: 80rpx;
+	background: #FF4D4F;
+	color: white;
+	border-radius: 40rpx;
+	font-size: 30rpx;
+	border: none;
+}
