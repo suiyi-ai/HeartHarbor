@@ -417,12 +417,19 @@ const _sfc_main = {
     // 调用Dify API获取AI回复
     callDifyAPI(userMessage) {
       return new Promise((resolve, reject) => {
-        const prompt = `请以${this.currentRole.name}的身份，使用${this.currentStyle.name}的风格回复用户。用户说：${userMessage}`;
+        const inputs = {
+          query: userMessage,
+          role: this.currentRole.name,
+          role_description: this.currentRole.description,
+          style: this.currentStyle.name,
+          system_prompt: `你是一个${this.currentRole.name}，请以${this.currentStyle.name}的风格回复用户。你的角色描述是：${this.currentRole.description}`
+        };
         const timeout = setTimeout(() => {
           reject(new Error("请求超时，请检查网络连接"));
         }, 1e4);
-        common_vendor.index.__f__("log", "at pages/ai/ai.vue:699", "Dify API配置:", this.difyConfig);
-        common_vendor.index.__f__("log", "at pages/ai/ai.vue:700", "完整URL:", this.difyConfig.apiUrl + this.difyConfig.endpoint);
+        common_vendor.index.__f__("log", "at pages/ai/ai.vue:705", "Dify API配置:", this.difyConfig);
+        common_vendor.index.__f__("log", "at pages/ai/ai.vue:706", "完整URL:", this.difyConfig.apiUrl + this.difyConfig.endpoint);
+        common_vendor.index.__f__("log", "at pages/ai/ai.vue:707", "结构化输入数据:", inputs);
         common_vendor.index.request({
           url: this.difyConfig.apiUrl + this.difyConfig.endpoint,
           method: "POST",
@@ -436,18 +443,16 @@ const _sfc_main = {
             "Content-Type": "application/json"
           },
           data: {
-            // 使用Dify API的标准格式（方案一）
-            inputs: {
-              query: prompt
-            },
-            query: prompt,
-            // 同时提供query字段
+            // 使用Dify变量系统传递结构化数据
+            inputs,
+            // 同时提供query字段保持向后兼容
+            query: userMessage,
             response_mode: "blocking",
             user: "heart-harbor-user"
           },
           success: (res) => {
             clearTimeout(timeout);
-            common_vendor.index.__f__("log", "at pages/ai/ai.vue:724", "Dify API响应:", res);
+            common_vendor.index.__f__("log", "at pages/ai/ai.vue:730", "Dify API响应:", res);
             if (res.statusCode === 0) {
               reject(new Error("网络连接异常，请检查网络设置"));
               return;
@@ -487,7 +492,7 @@ const _sfc_main = {
           },
           fail: (err) => {
             clearTimeout(timeout);
-            common_vendor.index.__f__("error", "at pages/ai/ai.vue:773", "Dify API调用失败:", err);
+            common_vendor.index.__f__("error", "at pages/ai/ai.vue:779", "Dify API调用失败:", err);
             let errorMessage = "网络请求失败";
             if (err.errMsg) {
               if (err.errMsg.includes("timeout")) {

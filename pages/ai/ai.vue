@@ -687,8 +687,14 @@
 			// 调用Dify API获取AI回复
 			callDifyAPI(userMessage) {
 				return new Promise((resolve, reject) => {
-					// 构建提示词，包含角色和风格信息
-					const prompt = `请以${this.currentRole.name}的身份，使用${this.currentStyle.name}的风格回复用户。用户说：${userMessage}`
+					// 构建结构化输入数据，使用Dify变量系统传递角色信息
+					const inputs = {
+						query: userMessage,
+						role: this.currentRole.name,
+						role_description: this.currentRole.description,
+						style: this.currentStyle.name,
+						system_prompt: `你是一个${this.currentRole.name}，请以${this.currentStyle.name}的风格回复用户。你的角色描述是：${this.currentRole.description}`
+					}
 					
 					// 添加超时机制
 					const timeout = setTimeout(() => {
@@ -698,6 +704,7 @@
 					// 调试信息
 					console.log('Dify API配置:', this.difyConfig)
 					console.log('完整URL:', this.difyConfig.apiUrl + this.difyConfig.endpoint)
+					console.log('结构化输入数据:', inputs)
 					
 					uni.request({
 						url: this.difyConfig.apiUrl + this.difyConfig.endpoint,
@@ -711,11 +718,10 @@
 							'Content-Type': 'application/json'
 						},
 						data: {
-							// 使用Dify API的标准格式（方案一）
-							inputs: {
-								query: prompt
-							},
-							query: prompt,  // 同时提供query字段
+							// 使用Dify变量系统传递结构化数据
+							inputs: inputs,
+							// 同时提供query字段保持向后兼容
+							query: userMessage,
 							response_mode: 'blocking',
 							user: 'heart-harbor-user'
 						},
@@ -1101,12 +1107,15 @@
 	white-space: nowrap;
 	gap: 20rpx;
 	padding: 10rpx 0;
+	align-items: center;
+	justify-content: flex-start;
 }
 
 .role-item {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	justify-content: center;
 	padding: 30rpx 40rpx;
 	background: #F8F9FA;
 	border-radius: 25rpx;
@@ -1116,6 +1125,7 @@
 	cursor: pointer;
 	position: relative;
 	overflow: hidden;
+	text-align: center;
 }
 
 .role-item::before {

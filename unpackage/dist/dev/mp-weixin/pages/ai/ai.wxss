@@ -195,11 +195,14 @@
 	white-space: nowrap;
 	gap: 20rpx;
 	padding: 10rpx 0;
+	align-items: center;
+	justify-content: flex-start;
 }
 .role-item.data-v-fdb58938 {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	justify-content: center;
 	padding: 30rpx 40rpx;
 	background: #F8F9FA;
 	border-radius: 25rpx;
@@ -209,6 +212,7 @@
 	cursor: pointer;
 	position: relative;
 	overflow: hidden;
+	text-align: center;
 }
 .role-item.data-v-fdb58938::before {
 	content: '';
