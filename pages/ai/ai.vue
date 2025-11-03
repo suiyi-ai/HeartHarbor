@@ -1100,6 +1100,9 @@
 	padding: 30rpx;
 	border: 2rpx solid #E6F3FF;
 	box-shadow: 0 8rpx 30rpx rgba(24, 144, 255, 0.1);
+	display: flex;
+	flex-direction: column;
+	align-items: center; /* 确保内容居中 */
 }
 
 .role-list {
@@ -1108,7 +1111,10 @@
 	gap: 20rpx;
 	padding: 10rpx 0;
 	align-items: center;
-	justify-content: flex-start;
+	justify-content: center; /* 改为居中显示 */
+	width: 100%; /* 确保宽度100% */
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 .role-item {
@@ -1121,11 +1127,32 @@
 	border-radius: 25rpx;
 	border: 2rpx solid transparent;
 	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	min-width: 200rpx;
+	min-width: 200rpx; /* 确保最小宽度 */
+	max-width: 250rpx; /* 限制最大宽度 */
 	cursor: pointer;
 	position: relative;
 	overflow: hidden;
 	text-align: center;
+	flex-shrink: 0; /* 防止按钮被压缩 */
+}
+
+/* 添加滚动条样式 */
+.role-list::-webkit-scrollbar {
+	height: 6rpx;
+}
+
+.role-list::-webkit-scrollbar-track {
+	background: #f1f1f1;
+	border-radius: 3rpx;
+}
+
+.role-list::-webkit-scrollbar-thumb {
+	background: #1890FF;
+	border-radius: 3rpx;
+}
+
+.role-list::-webkit-scrollbar-thumb:hover {
+	background: #40A9FF;
 }
 
 .role-item::before {
@@ -1857,8 +1884,15 @@
 		margin-bottom: 25rpx;
 	}
 	
+	/* 小屏幕角色选择优化 */
+	.role-list {
+		gap: 15rpx; /* 小屏幕减小间距 */
+		justify-content: flex-start; /* 小屏幕左对齐，便于滚动 */
+	}
+	
 	.role-item {
-		min-width: 170rpx;
+		min-width: 180rpx; /* 小屏幕适当减小宽度 */
+		max-width: 220rpx;
 		padding: 25rpx 30rpx;
 	}
 	
