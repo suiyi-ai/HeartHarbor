@@ -62,7 +62,7 @@ const _sfc_main = {
         }
         await this.loadConversationStats();
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/ai/ai.vue:245", "初始化对话系统失败:", error);
+        common_vendor.index.__f__("error", "at pages/ai/ai.vue:245", "初始化对话系统失败", error);
         common_vendor.index.showToast({
           title: "对话系统初始化失败",
           icon: "none",
@@ -90,7 +90,7 @@ const _sfc_main = {
     // 创建新对话
     async createNewConversation() {
       try {
-        const title = `与${this.currentRole.name}的对话`;
+        const title = `${this.currentRole.name}的对话`;
         const conversation = await utils_supabase.conversationService.createConversation(
           title,
           this.currentRole.id,
@@ -111,7 +111,7 @@ const _sfc_main = {
           duration: 1500
         });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/ai/ai.vue:303", "创建新对话失败:", error);
+        common_vendor.index.__f__("error", "at pages/ai/ai.vue:303", "创建新对话失�?", error);
         common_vendor.index.showToast({
           title: "创建对话失败",
           icon: "none",
@@ -123,13 +123,8 @@ const _sfc_main = {
     async loadConversation(conversationId) {
       try {
         this.currentConversationId = conversationId;
-        const conversation = this.conversations.find((c) => c.id === conversationId);
-        if (conversation && conversation.messages) {
-          this.messages = conversation.messages;
-        } else {
-          const messages = await utils_supabase.conversationService.getConversationMessages(conversationId);
-          this.messages = messages;
-        }
+        const messages = await utils_supabase.conversationService.getConversationMessages(conversationId);
+        this.messages = messages;
         const conversationData = this.conversations.find((c) => c.id === conversationId);
         if (conversationData) {
           const role = this.roles.find((r) => r.id === conversationData.role_id);
@@ -144,7 +139,7 @@ const _sfc_main = {
           this.scrollTop = 99999;
         });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/ai/ai.vue:346", "加载对话失败:", error);
+        common_vendor.index.__f__("error", "at pages/ai/ai.vue:340", "加载对话失败:", error);
         common_vendor.index.showToast({
           title: "加载对话失败",
           icon: "none",
@@ -162,17 +157,25 @@ const _sfc_main = {
             try {
               await utils_supabase.conversationService.deleteConversation(conversationId);
               if (this.currentConversationId === conversationId) {
-                await this.createNewConversation();
+                await this.loadConversations();
+                this.currentConversationId = null;
+                this.messages = [
+                  {
+                    role: "assistant",
+                    content: "你好！我是你的AI心理伙伴，随时准备倾听你的心声。今天过得怎么样？"
+                  }
+                ];
+              } else {
+                await this.loadConversations();
+                await this.loadConversationStats();
               }
-              await this.loadConversations();
-              await this.loadConversationStats();
               common_vendor.index.showToast({
                 title: "对话已删除",
                 icon: "success",
                 duration: 1500
               });
             } catch (error) {
-              common_vendor.index.__f__("error", "at pages/ai/ai.vue:381", "删除对话失败:", error);
+              common_vendor.index.__f__("error", "at pages/ai/ai.vue:385", "删除对话失败:", error);
               common_vendor.index.showToast({
                 title: "删除失败",
                 icon: "none",
@@ -215,7 +218,7 @@ const _sfc_main = {
           duration: 1500
         });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/ai/ai.vue:432", "更新标题失败:", error);
+        common_vendor.index.__f__("error", "at pages/ai/ai.vue:436", "更新标题失败:", error);
         common_vendor.index.showToast({
           title: "更新失败",
           icon: "none",
@@ -240,16 +243,13 @@ const _sfc_main = {
     // 格式化日期
     formatDate(dateString) {
       const date = new Date(dateString);
-      const now = /* @__PURE__ */ new Date();
-      const diff = now - date;
-      if (diff < 24 * 60 * 60 * 1e3) {
-        return date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
-      } else if (diff < 7 * 24 * 60 * 60 * 1e3) {
-        const days = Math.floor(diff / (24 * 60 * 60 * 1e3));
-        return `${days}天前`;
-      } else {
-        return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
-      }
+      return date.toLocaleString("zh-CN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
     },
     // 获取角色名称
     getRoleName(roleId) {
@@ -279,7 +279,7 @@ const _sfc_main = {
           this.currentStyle = this.styles[0];
         }
       } catch (e) {
-        common_vendor.index.__f__("log", "at pages/ai/ai.vue:510", "加载用户偏好失败", e);
+        common_vendor.index.__f__("log", "at pages/ai/ai.vue:508", "加载用户偏好失败", e);
         this.currentRole = this.roles[0];
         this.currentStyle = this.styles[0];
       }
@@ -305,7 +305,7 @@ const _sfc_main = {
     addRoleGreeting() {
       const greetings = {
         companion: "你好！我是你的心灵伙伴，我会用温暖的心倾听你的每一个故事。有什么想和我分享的吗？",
-        advisor: "您好！我是您的专业心理顾问，我将用专业的知识为您提供理性的分析和建议。请告诉我您的情况。"
+        advisor: "您好！我是您的专业心理顾问，我将用专业的知识为您提供理性的分析和建议。请告诉我您的情况？"
       };
       this.messages.push({
         role: "assistant",
@@ -315,11 +315,11 @@ const _sfc_main = {
         this.scrollTop = 99999;
       });
     },
-    // 显示虚拟人功能预览
+    // 显示虚拟人功能预�?
     showVirtualHumanPreview() {
       this.showVirtualHumanModal = true;
     },
-    // 关闭虚拟人功能预览
+    // 关闭虚拟人功能预�?
     closeVirtualHumanModal() {
       this.showVirtualHumanModal = false;
     },
@@ -340,7 +340,7 @@ const _sfc_main = {
           this.inputText
         );
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/ai/ai.vue:587", "保存用户消息失败:", error);
+        common_vendor.index.__f__("error", "at pages/ai/ai.vue:585", "保存用户消息失败:", error);
       }
       const userMessage = this.inputText;
       this.inputText = "";
@@ -361,7 +361,7 @@ const _sfc_main = {
             aiResponse
           );
         } catch (error) {
-          common_vendor.index.__f__("error", "at pages/ai/ai.vue:617", "保存AI消息失败:", error);
+          common_vendor.index.__f__("error", "at pages/ai/ai.vue:615", "保存AI消息失败:", error);
         }
         common_vendor.index.showToast({
           title: "AI回复已生成",
@@ -369,24 +369,18 @@ const _sfc_main = {
           duration: 1500
         });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/ai/ai.vue:628", "Dify API调用失败:", error);
+        common_vendor.index.__f__("error", "at pages/ai/ai.vue:626", "Dify API调用失败:", error);
         let errorTitle = "网络异常";
-        let errorMessage = "使用本地回复";
         if (error.message.includes("超时")) {
           errorTitle = "请求超时";
-          errorMessage = "网络连接较慢，请稍后重试";
         } else if (error.message.includes("网络连接异常")) {
           errorTitle = "网络连接异常";
-          errorMessage = "请检查网络设置后重试";
         } else if (error.message.includes("SSL")) {
           errorTitle = "安全连接失败";
-          errorMessage = "请检查网络环境或切换网络";
         } else if (error.message.includes("API请求格式错误")) {
           errorTitle = "配置错误";
-          errorMessage = "请检查API配置参数";
         } else if (error.message.includes("API密钥无效")) {
           errorTitle = "认证失败";
-          errorMessage = "请检查API密钥配置";
         }
         const fallbackResponse = this.generateAIResponse(userMessage);
         this.messages.push({
@@ -400,10 +394,10 @@ const _sfc_main = {
             fallbackResponse
           );
         } catch (error2) {
-          common_vendor.index.__f__("error", "at pages/ai/ai.vue:667", "保存降级消息失败:", error2);
+          common_vendor.index.__f__("error", "at pages/ai/ai.vue:665", "保存降级消息失败:", error2);
         }
         common_vendor.index.showToast({
-          title: `${errorTitle}，${errorMessage}`,
+          title: `${errorTitle}�?{errorMessage}`,
           icon: "none",
           duration: 3e3
         });
@@ -427,9 +421,9 @@ const _sfc_main = {
         const timeout = setTimeout(() => {
           reject(new Error("请求超时，请检查网络连接"));
         }, 1e4);
-        common_vendor.index.__f__("log", "at pages/ai/ai.vue:705", "Dify API配置:", this.difyConfig);
-        common_vendor.index.__f__("log", "at pages/ai/ai.vue:706", "完整URL:", this.difyConfig.apiUrl + this.difyConfig.endpoint);
-        common_vendor.index.__f__("log", "at pages/ai/ai.vue:707", "结构化输入数据:", inputs);
+        common_vendor.index.__f__("log", "at pages/ai/ai.vue:703", "Dify API配置:", this.difyConfig);
+        common_vendor.index.__f__("log", "at pages/ai/ai.vue:704", "完整URL:", this.difyConfig.apiUrl + this.difyConfig.endpoint);
+        common_vendor.index.__f__("log", "at pages/ai/ai.vue:705", "结构化输入数据", inputs);
         common_vendor.index.request({
           url: this.difyConfig.apiUrl + this.difyConfig.endpoint,
           method: "POST",
@@ -452,13 +446,13 @@ const _sfc_main = {
           },
           success: (res) => {
             clearTimeout(timeout);
-            common_vendor.index.__f__("log", "at pages/ai/ai.vue:730", "Dify API响应:", res);
+            common_vendor.index.__f__("log", "at pages/ai/ai.vue:728", "Dify API响应:", res);
             if (res.statusCode === 0) {
               reject(new Error("网络连接异常，请检查网络设置"));
               return;
             }
             if (res.statusCode === 200 && res.data) {
-              let aiResponse = "我收到了你的消息，正在思考如何回复...";
+              let aiResponse = "我收到了你的消息，正在思考如何回�?..";
               if (res.data.answer) {
                 aiResponse = res.data.answer;
               } else if (res.data.message) {
@@ -492,7 +486,7 @@ const _sfc_main = {
           },
           fail: (err) => {
             clearTimeout(timeout);
-            common_vendor.index.__f__("error", "at pages/ai/ai.vue:779", "Dify API调用失败:", err);
+            common_vendor.index.__f__("error", "at pages/ai/ai.vue:777", "Dify API调用失败:", err);
             let errorMessage = "网络请求失败";
             if (err.errMsg) {
               if (err.errMsg.includes("timeout")) {
@@ -526,8 +520,8 @@ const _sfc_main = {
           },
           encouraging: {
             pressure: "感受到你的压力，但请相信你有能力应对！每一次挑战都是成长的机会，加油！🌟",
-            happy: "真棒！继续保持这种积极的状态，你的快乐也会感染身边的人！",
-            sad: "难过的时候请记得，你并不孤单。每一次情绪波动都是自我了解的机会，相信你会变得更强大！"
+            happy: "真棒！继续保持这种积极的状态，你的快乐也会感染身边的人～",
+            sad: "难过的时候请记得，你并不孤单。每一次情绪波动都是自我了解的机会，相信你会变得更强大～"
           },
           casual: {
             pressure: "哈哈，压力山大啊？放松点，生活就是这样，有起有落～聊聊看具体啥情况？😄",
@@ -573,7 +567,7 @@ const _sfc_main = {
       }
       const defaultResponses = {
         companion: {
-          friendly: "谢谢你的分享！我在这里倾听，如果你愿意，可以告诉我更多关于你的感受和想法。😊",
+          friendly: "谢谢你的分享！我在这里倾听，如果你愿意，可以告诉我更多关于你的感受和想法。",
           professional: "感谢您的分享。我将基于专业角度为您提供分析建议。",
           encouraging: "感谢分享！每一次交流都是成长的机会，继续加油！🌟",
           casual: "哈哈，聊得不错嘛！还有什么想说的尽管来～😄"

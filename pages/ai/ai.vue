@@ -1,6 +1,6 @@
 <template>
 	<view class="ai-page">
-		<!-- 顶部功能区 -->
+		<!-- 顶部功能�?-->
 		<view class="top-bar">
 			<view class="virtual-human-btn" @click="showVirtualHumanPreview">
 				<text class="virtual-icon">🎭</text>
@@ -11,7 +11,7 @@
 			</view>
 			<view class="conversation-actions">
 				<view class="new-conversation-btn" @click="createNewConversation">
-					<text class="action-icon">➕</text>
+					<text class="action-icon">+</text>
 					<text class="action-text">新对话</text>
 				</view>
 				<view class="history-btn" @click="toggleHistoryPanel">
@@ -21,7 +21,7 @@
 			</view>
 		</view>
 		
-		<!-- 角色选择区 -->
+		<!-- 角色选择�?-->
 		<view class="role-section">
 			<text class="section-title">选择AI角色</text>
 			<scroll-view class="role-list" scroll-x="true" show-scrollbar="false" enable-flex>
@@ -35,7 +35,7 @@
 			</scroll-view>
 		</view>
 		
-		<!-- 风格设置区 -->
+		<!-- 风格设置�?-->
 		<view class="style-section">
 			<text class="section-title">回复风格</text>
 			<view class="style-tags">
@@ -48,7 +48,7 @@
 			</view>
 		</view>
 		
-		<!-- 聊天主界面 -->
+		<!-- 聊天主界�?-->
 		<view class="chat-container">
 			<scroll-view class="message-list" scroll-y="true" :scroll-top="scrollTop" enable-flex>
 				<view class="message-item" v-for="(msg, index) in messages" :key="index" 
@@ -62,7 +62,7 @@
 					</view>
 				</view>
 				
-				<!-- 加载状态 -->
+				<!-- 加载状�?-->
 				<view class="message-item ai-message" v-if="isLoading">
 					<view class="avatar">
 						<text>{{currentRole.icon}}</text>
@@ -83,7 +83,7 @@
 			</view>
 		</view>
 		
-		<!-- 虚拟人功能预览弹窗 -->
+		<!-- 虚拟人功能预览弹�?-->
 		<view class="modal" v-if="showVirtualHumanModal">
 			<view class="modal-content">
 				<view class="modal-header">
@@ -139,7 +139,7 @@
 			</scroll-view>
 		</view>
 		
-		<!-- 遮罩层 -->
+		<!-- 遮罩�?-->
 		<view class="overlay" v-if="showHistoryPanel" @click="toggleHistoryPanel"></view>
 		
 		<!-- 编辑标题弹窗 -->
@@ -242,7 +242,7 @@
 					await this.loadConversationStats()
 					
 				} catch (error) {
-					console.error('初始化对话系统失败:', error)
+					console.error('初始化对话系统失败', error)
 					uni.showToast({
 						title: '对话系统初始化失败',
 						icon: 'none',
@@ -274,7 +274,7 @@
 			// 创建新对话
 			async createNewConversation() {
 				try {
-					const title = `与${this.currentRole.name}的对话`
+					const title = `${this.currentRole.name}的对话`
 					const conversation = await conversationService.createConversation(
 						title,
 						this.currentRole.id,
@@ -300,7 +300,7 @@
 					})
 					
 				} catch (error) {
-					console.error('创建新对话失败:', error)
+					console.error('创建新对话失�?', error)
 					uni.showToast({
 						title: '创建对话失败',
 						icon: 'none',
@@ -314,17 +314,11 @@
 				try {
 					this.currentConversationId = conversationId
 					
-					// 获取对话消息
-					const conversation = this.conversations.find(c => c.id === conversationId)
-					if (conversation && conversation.messages) {
-						this.messages = conversation.messages
-					} else {
-						// 从数据库加载消息
-						const messages = await conversationService.getConversationMessages(conversationId)
-						this.messages = messages
-					}
+					// 从数据库加载消息
+					const messages = await conversationService.getConversationMessages(conversationId)
+					this.messages = messages
 					
-					// 更新当前角色和风格
+					// 更新当前角色和风�?
 					const conversationData = this.conversations.find(c => c.id === conversationId)
 					if (conversationData) {
 						const role = this.roles.find(r => r.id === conversationData.role_id)
@@ -337,7 +331,7 @@
 					// 关闭历史面板
 					this.showHistoryPanel = false
 					
-					// 滚动到底部
+					// 滚动到底�?
 					this.$nextTick(() => {
 						this.scrollTop = 99999
 					})
@@ -362,14 +356,24 @@
 							try {
 								await conversationService.deleteConversation(conversationId)
 								
-								// 如果删除的是当前对话，创建新对话
+								// 如果删除的是当前对话，重置对话状态
 								if (this.currentConversationId === conversationId) {
-									await this.createNewConversation()
+									// 重新加载对话列表
+									await this.loadConversations()
+									
+									// 重置当前对话状态，显示欢迎消息
+									this.currentConversationId = null
+									this.messages = [
+										{
+											role: 'assistant',
+											content: '你好！我是你的AI心理伙伴，随时准备倾听你的心声。今天过得怎么样？'
+										}
+									]
+								} else {
+									// 重新加载对话列表和统计信息
+									await this.loadConversations()
+									await this.loadConversationStats()
 								}
-								
-								// 重新加载对话列表
-								await this.loadConversations()
-								await this.loadConversationStats()
 								
 								uni.showToast({
 									title: '对话已删除',
@@ -455,23 +459,17 @@
 			},
 			
 			// 格式化日期
-			formatDate(dateString) {
-				const date = new Date(dateString)
-				const now = new Date()
-				const diff = now - date
-				
-				if (diff < 24 * 60 * 60 * 1000) {
-					// 今天
-					return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-				} else if (diff < 7 * 24 * 60 * 60 * 1000) {
-					// 一周内
-					const days = Math.floor(diff / (24 * 60 * 60 * 1000))
-					return `${days}天前`
-				} else {
-					// 更早
-					return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
-				}
-			},
+		formatDate(dateString) {
+			const date = new Date(dateString)
+			// 使用绝对时间格式，返回完整时间格式
+			return date.toLocaleString('zh-CN', { 
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit',
+				hour: '2-digit',
+				minute: '2-digit'
+			})
+		},
 			
 			// 获取角色名称
 			getRoleName(roleId) {
@@ -539,7 +537,7 @@
 			addRoleGreeting() {
 				const greetings = {
 					companion: '你好！我是你的心灵伙伴，我会用温暖的心倾听你的每一个故事。有什么想和我分享的吗？',
-					advisor: '您好！我是您的专业心理顾问，我将用专业的知识为您提供理性的分析和建议。请告诉我您的情况。'
+					advisor: '您好！我是您的专业心理顾问，我将用专业的知识为您提供理性的分析和建议。请告诉我您的情况？'
 				}
 				
 				this.messages.push({
@@ -552,12 +550,12 @@
 				})
 			},
 			
-			// 显示虚拟人功能预览
+			// 显示虚拟人功能预�?
 			showVirtualHumanPreview() {
 				this.showVirtualHumanModal = true
 			},
 			
-			// 关闭虚拟人功能预览
+			// 关闭虚拟人功能预�?
 			closeVirtualHumanModal() {
 				this.showVirtualHumanModal = false
 			},
@@ -591,7 +589,7 @@
 				this.inputText = ''
 				this.isLoading = true
 				
-				// 滚动到最新消息
+				// 滚动到最新消�?
 				this.$nextTick(() => {
 					this.scrollTop = 99999
 				})
@@ -600,7 +598,7 @@
 					// 优先尝试调用Dify API获取真实AI回复
 					const aiResponse = await this.callDifyAPI(userMessage)
 					
-					// 添加AI回复到消息列表
+					// 添加AI回复到消息列�?
 					this.messages.push({
 						role: 'assistant',
 						content: aiResponse
@@ -667,14 +665,14 @@
 						console.error('保存降级消息失败:', error)
 					}
 					
-					// 显示详细的错误提示
+					// 显示详细的错误提�?
 					uni.showToast({
-						title: `${errorTitle}，${errorMessage}`,
+						title: `${errorTitle}�?{errorMessage}`,
 						icon: 'none',
 						duration: 3000
 					})
 				} finally {
-					// 无论成功失败，都隐藏加载状态
+					// 无论成功失败，都隐藏加载状�?
 					this.isLoading = false
 					
 					// 滚动到最新消息
@@ -704,7 +702,7 @@
 					// 调试信息
 					console.log('Dify API配置:', this.difyConfig)
 					console.log('完整URL:', this.difyConfig.apiUrl + this.difyConfig.endpoint)
-					console.log('结构化输入数据:', inputs)
+					console.log('结构化输入数据', inputs)
 					
 					uni.request({
 						url: this.difyConfig.apiUrl + this.difyConfig.endpoint,
@@ -737,7 +735,7 @@
 							
 							if (res.statusCode === 200 && res.data) {
 								// 提取AI回复内容，适配不同的响应格式
-								let aiResponse = '我收到了你的消息，正在思考如何回复...'
+								let aiResponse = '我收到了你的消息，正在思考如何回�?..'
 								
 								if (res.data.answer) {
 									aiResponse = res.data.answer
@@ -749,7 +747,7 @@
 									aiResponse = res.data
 								}
 								
-								// 确保回复内容不为空
+								// 确保回复内容不为�?
 								if (!aiResponse || aiResponse.trim() === '') {
 									aiResponse = '我理解你的感受，但需要更多信息来提供更好的帮助。可以详细说说吗？'
 								}
@@ -816,8 +814,8 @@
 						},
 						encouraging: {
 							pressure: '感受到你的压力，但请相信你有能力应对！每一次挑战都是成长的机会，加油！🌟',
-							happy: '真棒！继续保持这种积极的状态，你的快乐也会感染身边的人！',
-							sad: '难过的时候请记得，你并不孤单。每一次情绪波动都是自我了解的机会，相信你会变得更强大！'
+							happy: '真棒！继续保持这种积极的状态，你的快乐也会感染身边的人～',
+							sad: '难过的时候请记得，你并不孤单。每一次情绪波动都是自我了解的机会，相信你会变得更强大～'
 						},
 						casual: {
 							pressure: '哈哈，压力山大啊？放松点，生活就是这样，有起有落～聊聊看具体啥情况？😄',
@@ -870,7 +868,7 @@
 				// 默认回复
 				const defaultResponses = {
 					companion: {
-						friendly: '谢谢你的分享！我在这里倾听，如果你愿意，可以告诉我更多关于你的感受和想法。😊',
+						friendly: '谢谢你的分享！我在这里倾听，如果你愿意，可以告诉我更多关于你的感受和想法。',
 						professional: '感谢您的分享。我将基于专业角度为您提供分析建议。',
 						encouraging: '感谢分享！每一次交流都是成长的机会，继续加油！🌟',
 						casual: '哈哈，聊得不错嘛！还有什么想说的尽管来～😄'
@@ -896,7 +894,7 @@
 	padding: 20rpx;
 }
 
-/* 顶部功能区样式 - 优化后 */
+/* 顶部功能区样�?- 优化�?*/
 .top-bar {
 	display: flex;
 	align-items: center;
@@ -906,7 +904,7 @@
 	gap: 20rpx;
 }
 
-/* 虚拟人按钮 - 优化后 */
+/* 虚拟人按�?- 优化�?*/
 .virtual-human-btn {
 	display: flex;
 	flex-direction: column;
@@ -938,7 +936,7 @@
 	font-weight: 600;
 }
 
-/* 当前设置显示 - 优化后 */
+/* 当前设置显示 - 优化�?*/
 .current-settings {
 	background: rgba(255, 255, 255, 0.95);
 	padding: 18rpx 30rpx;
@@ -960,7 +958,7 @@
 	text-align: center;
 }
 
-/* 对话操作按钮组 - 优化后 */
+/* 对话操作按钮�?- 优化�?*/
 .conversation-actions {
 	display: flex;
 	gap: 15rpx;
@@ -1071,7 +1069,7 @@
 	font-weight: 500;
 }
 
-/* 功能区标题 - 优化后 */
+/* 功能区标�?- 优化�?*/
 .section-title {
 	display: block;
 	font-size: 34rpx;
@@ -1092,7 +1090,7 @@
 	margin: 10rpx auto 0;
 }
 
-/* 角色选择区样式 - 优化后 */
+/* 角色选择区样�?- 优化�?*/
 .role-section {
 	margin-bottom: 35rpx;
 	background: rgba(255, 255, 255, 0.95);
@@ -1127,16 +1125,16 @@
 	border-radius: 25rpx;
 	border: 2rpx solid transparent;
 	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	min-width: 200rpx; /* 确保最小宽度 */
-	max-width: 250rpx; /* 限制最大宽度 */
+	min-width: 200rpx; /* 确保最小宽�?*/
+	max-width: 250rpx; /* 限制最大宽�?*/
 	cursor: pointer;
 	position: relative;
 	overflow: hidden;
 	text-align: center;
-	flex-shrink: 0; /* 防止按钮被压缩 */
+	flex-shrink: 0; /* 防止按钮被压�?*/
 }
 
-/* 添加滚动条样式 */
+/* 添加滚动条样�?*/
 .role-list::-webkit-scrollbar {
 	height: 6rpx;
 }
@@ -1206,7 +1204,7 @@
 	line-height: 1.4;
 }
 
-/* 风格设置区样式 - 优化后 */
+/* 风格设置区样�?- 优化�?*/
 .style-section {
 	margin-bottom: 35rpx;
 	background: rgba(255, 255, 255, 0.95);
@@ -1281,7 +1279,7 @@
 	font-weight: 600;
 }
 
-/* 聊天容器样式 - 优化后 */
+/* 聊天容器样式 - 优化�?*/
 .chat-container {
 	background: #fff;
 	border-radius: 25rpx;
@@ -1380,7 +1378,7 @@
 	box-shadow: 0 6rpx 20rpx rgba(24, 144, 255, 0.25);
 }
 
-/* 输入区域样式 - 优化后 */
+/* 输入区域样式 - 优化�?*/
 .input-area {
 	display: flex;
 	gap: 25rpx;
@@ -1426,7 +1424,7 @@
 	box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.4);
 }
 
-/* 模态框样式 - 优化后 */
+/* 模态框样式 - 优化�?*/
 .modal {
 	position: fixed;
 	top: 0;
@@ -1550,7 +1548,7 @@
 	margin-bottom: 0;
 }
 
-/* 历史记录面板样式 - 优化后 */
+/* 历史记录面板样式 - 优化�?*/
 .history-panel {
 	position: fixed;
 	top: 0;
@@ -1738,7 +1736,7 @@
 	color: #999;
 }
 
-/* 遮罩层样式 - 优化后 */
+/* 遮罩层样�?- 优化�?*/
 .overlay {
 	position: fixed;
 	top: 0;
@@ -1759,7 +1757,7 @@
 	}
 }
 
-/* 编辑标题弹窗样式 - 优化后 */
+/* 编辑标题弹窗样式 - 优化�?*/
 .title-input {
 	width: 100%;
 	height: 90rpx;
@@ -1815,7 +1813,7 @@
 	box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.4);
 }
 
-/* 加载动画样式 - 优化后 */
+/* 加载动画样式 - 优化�?*/
 .loading-dots {
 	display: flex;
 	justify-content: center;
@@ -1850,7 +1848,7 @@
 	}
 }
 
-/* 响应式调整 - 优化后 */
+/* 响应式调�?- 优化�?*/
 @media (max-width: 750rpx) {
 	.ai-page {
 		padding: 15rpx;
@@ -1886,8 +1884,8 @@
 	
 	/* 小屏幕角色选择优化 */
 	.role-list {
-		gap: 15rpx; /* 小屏幕减小间距 */
-		justify-content: flex-start; /* 小屏幕左对齐，便于滚动 */
+		gap: 15rpx; /* 小屏幕减小间�?*/
+		justify-content: flex-start; /* 小屏幕左对齐，便于滚�?*/
 	}
 	
 	.role-item {
@@ -1950,3 +1948,4 @@
 	}
 }
 </style>
+

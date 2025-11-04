@@ -112,7 +112,7 @@ class SupabaseService {
     this.isConnected = false;
     this.initConnection();
   }
-  // 初始化连接（增强版本）
+  // 初始化连接（修复版本）
   async initConnection() {
     try {
       await migrateUserData();
@@ -121,29 +121,49 @@ class SupabaseService {
         this.userId = generateUUID();
         common_vendor.index.setStorageSync("user_id", this.userId);
       }
-      await this.testConnection();
+      const testResult = await this.testConnection();
       this.isConnected = true;
       common_vendor.index.__f__("log", "at utils/supabase.js:172", "Supabase MCP连接成功，用户ID:", this.userId);
+      return testResult;
     } catch (error) {
       common_vendor.index.__f__("warn", "at utils/supabase.js:174", "Supabase MCP连接失败，将使用降级方案:", error);
       this.isConnected = false;
+      throw error;
     }
   }
-  // 测试连接
+  // 测试连接（修复版本）
   async testConnection() {
-    const testResult = await this.callApi("conversations", {
+    const url = `${SUPABASE_CONFIG.url}/rest/v1/conversations?limit=1`;
+    const options = {
       method: "GET",
-      queryParams: {
-        limit: 1
+      header: {
+        "apikey": SUPABASE_CONFIG.anonKey,
+        "Authorization": `Bearer ${SUPABASE_CONFIG.anonKey}`,
+        "Content-Type": "application/json"
+      },
+      timeout: 1e4
+    };
+    common_vendor.index.__f__("log", "at utils/supabase.js:175", "测试Supabase连接:", url);
+    try {
+      const response = await common_vendor.index.request({
+        url,
+        ...options
+      });
+      common_vendor.index.__f__("log", "at utils/supabase.js:183", "连接测试响应状态码:", response.statusCode);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return response.data;
+      } else {
+        throw handleSupabaseError(response, url, options);
       }
-    });
-    return testResult;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:191", "Supabase连接测试失败:", error);
+      throw error;
+    }
   }
-  // 增强的API调用方法（修复HTTP 400错误）
+  // API调用方法
   async callApi(endpoint, options = {}) {
     if (!this.isConnected) {
-      common_vendor.index.__f__("warn", "at utils/supabase.js:194", "Supabase连接不可用，返回空数据");
-      return options.method === "GET" ? [] : null;
+      throw new Error("Supabase连接不可用，请检查网络连接");
     }
     let url = `${SUPABASE_CONFIG.url}/rest/v1/${endpoint}`;
     const defaultOptions = {
@@ -156,7 +176,7 @@ class SupabaseService {
       },
       timeout: 15e3
     };
-    if (options.method === "GET" && options.queryParams) {
+    if (options.queryParams) {
       const queryString = buildSupabaseQuery(options.queryParams);
       if (queryString) {
         url += "?" + queryString;
@@ -367,181 +387,104 @@ class SupabaseService {
     }
   }
 }
-class LocalStorageService {
-  constructor() {
-    this.storageKey = "ai_conversations";
-    this.userId = getUserId();
-  }
-  // 生成本地ID
-  generateId() {
-    return "local_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
-  }
-  // 获取所有对话
-  getConversations() {
-    const data = common_vendor.index.getStorageSync(this.storageKey) || {};
-    return data[this.userId] || [];
-  }
-  // 保存对话
-  saveConversation(conversation) {
-    const data = common_vendor.index.getStorageSync(this.storageKey) || {};
-    const userData = data[this.userId] || [];
-    if (!conversation.id) {
-      conversation.id = this.generateId();
-      conversation.created_at = (/* @__PURE__ */ new Date()).toISOString();
-      conversation.updated_at = conversation.created_at;
-      userData.push(conversation);
-    } else {
-      const index = userData.findIndex((c) => c.id === conversation.id);
-      if (index >= 0) {
-        conversation.updated_at = (/* @__PURE__ */ new Date()).toISOString();
-        userData[index] = conversation;
-      } else {
-        userData.push(conversation);
-      }
-    }
-    data[this.userId] = userData;
-    common_vendor.index.setStorageSync(this.storageKey, data);
-    return conversation;
-  }
-  // 保存消息
-  saveMessage(conversationId, role, content) {
-    const conversations = this.getConversations();
-    const conversation = conversations.find((c) => c.id === conversationId);
-    if (conversation) {
-      if (!conversation.messages) {
-        conversation.messages = [];
-      }
-      const message = {
-        id: this.generateId(),
-        conversation_id: conversationId,
-        role,
-        content,
-        created_at: (/* @__PURE__ */ new Date()).toISOString()
-      };
-      conversation.messages.push(message);
-      conversation.updated_at = (/* @__PURE__ */ new Date()).toISOString();
-      this.saveConversation(conversation);
-      return message;
-    }
-    return null;
-  }
-  // 删除对话
-  deleteConversation(conversationId) {
-    const conversations = this.getConversations();
-    const filtered = conversations.filter((c) => c.id !== conversationId);
-    const data = common_vendor.index.getStorageSync(this.storageKey) || {};
-    data[this.userId] = filtered;
-    common_vendor.index.setStorageSync(this.storageKey, data);
-    return true;
-  }
-}
 class ConversationService {
   constructor() {
     this.supabaseService = new SupabaseService();
-    this.localService = new LocalStorageService();
-    this.useSupabase = this.supabaseService.isConnected;
   }
-  // 检查Supabase连接（增强版本）
+  // 检查Supabase连接
   async checkSupabaseConnection() {
     try {
       const isConnected = this.supabaseService.isConnected;
-      this.useSupabase = isConnected;
-      common_vendor.index.__f__("log", "at utils/supabase.js:560", "MCP连接状态检查:", { useSupabase: this.useSupabase, isConnected });
+      common_vendor.index.__f__("log", "at utils/supabase.js:560", "Supabase连接状态检查:", { isConnected });
       return isConnected;
     } catch (error) {
-      common_vendor.index.__f__("warn", "at utils/supabase.js:563", "MCP连接检查失败，切换到本地存储:", error);
-      this.useSupabase = false;
-      return false;
+      common_vendor.index.__f__("error", "at utils/supabase.js:563", "Supabase连接检查失败:", error);
+      throw error;
     }
   }
-  // 智能创建对话（增强版本）
+  // 创建对话
   async createConversation(title, roleId, styleId) {
-    if (this.useSupabase) {
-      try {
-        const result = await this.supabaseService.createConversation(title, roleId, styleId);
-        if (result) {
-          this.localService.saveConversation(result);
-          return result;
-        }
-      } catch (error) {
-        common_vendor.index.__f__("warn", "at utils/supabase.js:581", "MCP创建对话失败，使用本地存储:", error);
-        this.useSupabase = false;
-      }
+    try {
+      const result = await this.supabaseService.createConversation(title, roleId, styleId);
+      common_vendor.index.__f__("log", "at utils/supabase.js:571", "创建对话成功:", result);
+      return result;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:574", "创建对话失败:", error);
+      throw error;
     }
-    return this.localService.saveConversation({
-      title: title || "新对话",
-      role_id: roleId,
-      style_id: styleId,
-      is_active: true,
-      messages: []
-    });
   }
-  // 智能获取用户对话（增强版本）
+  // 获取用户对话
   async getUserConversations() {
-    if (this.useSupabase) {
-      try {
-        const result = await this.supabaseService.getUserConversations();
-        if (result && result.length > 0) {
-          result.forEach((conv) => this.localService.saveConversation(conv));
-          return result;
-        }
-      } catch (error) {
-        common_vendor.index.__f__("warn", "at utils/supabase.js:608", "MCP获取对话失败，切换到本地存储:", error);
-        this.useSupabase = false;
-      }
+    try {
+      const result = await this.supabaseService.getUserConversations();
+      common_vendor.index.__f__("log", "at utils/supabase.js:582", "获取用户对话成功，数量:", result ? result.length : 0);
+      return result || [];
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:585", "获取用户对话失败:", error);
+      throw error;
     }
-    return this.localService.getConversations();
   }
   // 保存消息
   async saveMessage(conversationId, role, content) {
-    if (this.useSupabase) {
-      try {
-        return await this.supabaseService.saveMessage(conversationId, role, content);
-      } catch (error) {
-        this.useSupabase = false;
-      }
+    try {
+      const result = await this.supabaseService.saveMessage(conversationId, role, content);
+      common_vendor.index.__f__("log", "at utils/supabase.js:593", "保存消息成功:", result);
+      return result;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:596", "保存消息失败:", error);
+      throw error;
     }
-    return this.localService.saveMessage(conversationId, role, content);
   }
   // 更新对话标题
   async updateConversationTitle(conversationId, title) {
-    if (this.useSupabase) {
-      try {
-        return await this.supabaseService.updateConversationTitle(conversationId, title);
-      } catch (error) {
-        this.useSupabase = false;
-      }
+    try {
+      const result = await this.supabaseService.updateConversationTitle(conversationId, title);
+      common_vendor.index.__f__("log", "at utils/supabase.js:604", "更新对话标题成功:", result);
+      return result;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:607", "更新对话标题失败:", error);
+      throw error;
     }
-    const conversations = this.localService.getConversations();
-    const conversation = conversations.find((c) => c.id === conversationId);
-    if (conversation) {
-      conversation.title = title;
-      return this.localService.saveConversation(conversation);
-    }
-    return null;
   }
   // 删除对话
   async deleteConversation(conversationId) {
-    if (this.useSupabase) {
-      try {
-        return await this.supabaseService.deleteConversation(conversationId);
-      } catch (error) {
-        this.useSupabase = false;
-      }
+    try {
+      const result = await this.supabaseService.deleteConversation(conversationId);
+      common_vendor.index.__f__("log", "at utils/supabase.js:615", "删除对话成功:", result);
+      return result;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:618", "删除对话失败:", error);
+      throw error;
     }
-    return this.localService.deleteConversation(conversationId);
+  }
+  // 获取对话消息
+  async getConversationMessages(conversationId) {
+    try {
+      const result = await this.supabaseService.getConversationMessages(conversationId);
+      common_vendor.index.__f__("log", "at utils/supabase.js:633", "获取对话消息成功，数量:", result ? result.length : 0);
+      return result || [];
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:636", "获取对话消息失败:", error);
+      throw error;
+    }
   }
   // 获取统计信息
   async getConversationStats() {
-    const conversations = await this.getUserConversations();
-    const stats = {
-      total: conversations.length,
-      recent: conversations.filter((conv) => {
-        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1e3);
-        return new Date(conv.created_at) > oneWeekAgo;
-      }).length
-    };
-    return stats;
+    try {
+      const conversations = await this.getUserConversations();
+      const stats = {
+        total: conversations.length,
+        recent: conversations.filter((conv) => {
+          const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1e3);
+          return new Date(conv.created_at) > oneWeekAgo;
+        }).length
+      };
+      common_vendor.index.__f__("log", "at utils/supabase.js:653", "获取统计信息成功:", stats);
+      return stats;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:656", "获取统计信息失败:", error);
+      throw error;
+    }
   }
 }
 const conversationService = new ConversationService();

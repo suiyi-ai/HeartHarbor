@@ -1,0 +1,23 @@
+{
+  "name": "heartharborx",
+  "version": "1.0.0",
+  "description": "HeartHarborx - 心理健康AI助手",
+  "main": "main.js",
+  "scripts": {
+    "dev": "npm run dev:mp-weixin",
+    "build": "npm run build:mp-weixin",
+    "dev:mp-weixin": "cross-env NODE_ENV=development UNI_PLATFORM=mp-weixin vue-cli-service uni-build --watch",
+    "build:mp-weixin": "cross-env NODE_ENV=production UNI_PLATFORM=mp-weixin vue-cli-service uni-build"
+  },
+  "dependencies": {
+    "vue": "^2.7.14"
+  },
+  "devDependencies": {
+    "@vue/cli-service": "^4.5.19",
+    "cross-env": "^7.0.3"
+  },
+  "browserslist": [
+    "Android >= 4.4",
+    "ios >= 9"
+  ]
+}

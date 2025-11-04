@@ -1,163 +1,115 @@
-// Supabase修复测试文件
-// 用于验证MCP优化方案是否解决了HTTP 400错误
-
+// Supabase配置修复测试脚本
 const SUPABASE_CONFIG = {
-  url: 'https://etvdmnsernfiegfeadad.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0dmRtbnNlcm5maWVnZmVhZGFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4NzM1MDUsImV4cCI6MjA3NzQ0OTUwNX0.FNvK-NrAxGrY5TwYblFC__hScR9lxjC5VFEUPlMYtTY'
-}
+  url: "https://etvdmnsernfiegfeadad.supabase.co",
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0dmRtbnNlcm5maWVnZmVhZGFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4NzM1MDUsImV4cCI6MjA3NzQ0OTUwNX0.FNvK-NrAxGrY5TwYblFC__hScR9lxjC5VFEUPlMYtTY"
+};
 
-// 测试连接函数
-async function testConnection() {
-  console.log('=== 开始测试Supabase连接 ===')
+// 测试Supabase连接
+async function testSupabaseConnection() {
+  console.log('🧪 开始测试Supabase连接...');
   
   try {
-    // 测试基本连接
-    const response = await uni.request({
-      url: `${SUPABASE_CONFIG.url}/rest/v1/conversations?limit=1`,
+    // 测试REST API连接
+    const url = `${SUPABASE_CONFIG.url}/rest/v1/conversations?limit=1`;
+    const options = {
       method: 'GET',
-      header: {
+      headers: {
         'apikey': SUPABASE_CONFIG.anonKey,
         'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
         'Content-Type': 'application/json'
-      },
-      timeout: 10000
-    })
+      }
+    };
     
-    console.log('连接测试结果:', {
-      statusCode: response.statusCode,
-      success: response.statusCode === 200
-    })
+    console.log('📡 发送测试请求到:', url);
     
-    if (response.statusCode === 200) {
-      console.log('✅ Supabase连接成功')
-      return true
+    const response = await fetch(url, options);
+    console.log('✅ 连接测试响应状态码:', response.status);
+    
+    if (response.status >= 200 && response.status < 300) {
+      const data = await response.json();
+      console.log('🎉 Supabase连接测试成功!');
+      console.log('📊 响应数据:', data);
+      return true;
     } else {
-      console.log('❌ Supabase连接失败，状态码:', response.statusCode)
-      console.log('响应数据:', response.data)
-      return false
+      console.error('❌ Supabase连接测试失败，状态码:', response.status);
+      console.error('错误详情:', await response.text());
+      return false;
     }
   } catch (error) {
-    console.error('❌ 连接测试异常:', error)
-    return false
+    console.error('💥 Supabase连接测试异常:', error.message);
+    return false;
   }
 }
 
-// 测试查询语法
-async function testQuerySyntax() {
-  console.log('\n=== 开始测试查询语法 ===')
+// 验证配置信息
+function validateConfig() {
+  console.log('🔍 验证Supabase配置...');
   
-  const testUserId = 'user_1762133523120_07i8vud5j'
+  const configErrors = [];
   
-  // 测试原始错误查询
-  const badQuery = `user_id=eq.${testUserId}&is_active=eq.true&select=*`
-  console.log('❌ 错误查询语法:', badQuery)
-  
-  // 测试修复后的查询
-  const goodQuery = `user_id=eq.${testUserId}&is_active=eq.true&select=*`
-  console.log('✅ 修复后查询语法:', goodQuery)
-  
-  try {
-    const response = await uni.request({
-      url: `${SUPABASE_CONFIG.url}/rest/v1/conversations?${goodQuery}`,
-      method: 'GET',
-      header: {
-        'apikey': SUPABASE_CONFIG.anonKey,
-        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 10000
-    })
-    
-    console.log('查询测试结果:', {
-      statusCode: response.statusCode,
-      dataLength: response.data ? response.data.length : 0
-    })
-    
-    if (response.statusCode === 200) {
-      console.log('✅ 查询语法测试成功')
-      return true
-    } else {
-      console.log('❌ 查询语法测试失败，状态码:', response.statusCode)
-      console.log('错误详情:', response.data)
-      return false
-    }
-  } catch (error) {
-    console.error('❌ 查询测试异常:', error)
-    return false
-  }
-}
-
-// 测试API调用
-async function testApiCalls() {
-  console.log('\n=== 开始测试API调用 ===')
-  
-  try {
-    // 导入修复后的服务
-    const ConversationService = require('./utils/supabase.js').default
-    
-    const service = new ConversationService()
-    
-    // 测试连接检查
-    const connectionResult = await service.checkSupabaseConnection()
-    console.log('连接检查结果:', connectionResult)
-    
-    // 测试获取对话
-    const conversations = await service.getUserConversations()
-    console.log('获取对话结果:', {
-      success: Array.isArray(conversations),
-      count: conversations.length
-    })
-    
-    return true
-  } catch (error) {
-    console.error('❌ API调用测试异常:', error)
-    return false
-  }
-}
-
-// 主测试函数
-async function runTests() {
-  console.log('🚀 开始Supabase修复测试')
-  console.log('================================')
-  
-  const results = {
-    connection: false,
-    querySyntax: false,
-    apiCalls: false
+  if (!SUPABASE_CONFIG.url) {
+    configErrors.push('❌ Supabase URL未配置');
+  } else if (!SUPABASE_CONFIG.url.startsWith('https://')) {
+    configErrors.push('❌ Supabase URL格式错误，必须使用HTTPS');
   }
   
-  // 运行测试
-  results.connection = await testConnection()
-  results.querySyntax = await testQuerySyntax()
-  results.apiCalls = await testApiCalls()
+  if (!SUPABASE_CONFIG.anonKey) {
+    configErrors.push('❌ Supabase匿名密钥未配置');
+  } else if (!SUPABASE_CONFIG.anonKey.startsWith('eyJ')) {
+    configErrors.push('❌ Supabase匿名密钥格式可能错误');
+  }
   
-  console.log('\n=== 测试结果汇总 ===')
-  console.log('连接测试:', results.connection ? '✅ 通过' : '❌ 失败')
-  console.log('查询语法测试:', results.querySyntax ? '✅ 通过' : '❌ 失败')
-  console.log('API调用测试:', results.apiCalls ? '✅ 通过' : '❌ 失败')
-  
-  const allPassed = Object.values(results).every(result => result)
-  
-  if (allPassed) {
-    console.log('\n🎉 所有测试通过！Supabase修复成功')
+  if (configErrors.length === 0) {
+    console.log('✅ Supabase配置验证通过');
+    console.log('📋 配置详情:');
+    console.log('   URL:', SUPABASE_CONFIG.url);
+    console.log('   密钥:', SUPABASE_CONFIG.anonKey.substring(0, 20) + '...');
+    return true;
   } else {
-    console.log('\n⚠️  部分测试失败，请检查错误信息')
+    console.error('❌ Supabase配置验证失败:');
+    configErrors.forEach(error => console.error('   ', error));
+    return false;
+  }
+}
+
+// 运行测试
+async function runTests() {
+  console.log('🚀 开始Supabase配置修复验证测试\n');
+  
+  // 验证配置
+  const configValid = validateConfig();
+  if (!configValid) {
+    console.log('\n💡 修复建议:');
+    console.log('1. 检查.env文件中的Supabase配置');
+    console.log('2. 确认Supabase项目是否已创建并激活');
+    console.log('3. 验证API密钥是否正确');
+    return;
   }
   
-  return allPassed
+  console.log('\n---');
+  
+  // 测试连接
+  const connectionTest = await testSupabaseConnection();
+  
+  console.log('\n---');
+  console.log('📋 测试结果汇总:');
+  console.log('✅ 配置验证:', configValid ? '通过' : '失败');
+  console.log('✅ 连接测试:', connectionTest ? '通过' : '失败');
+  
+  if (configValid && connectionTest) {
+    console.log('\n🎉 所有测试通过！Supabase配置修复成功！');
+    console.log('💡 下一步建议:');
+    console.log('1. 在小程序开发工具中重新编译项目');
+    console.log('2. 检查小程序网络请求权限配置');
+    console.log('3. 验证小程序中的Supabase功能');
+  } else {
+    console.log('\n❌ 部分测试失败，需要进一步排查问题');
+    console.log('💡 排查建议:');
+    console.log('1. 检查网络连接和防火墙设置');
+    console.log('2. 确认Supabase项目域名已添加到小程序白名单');
+    console.log('3. 检查小程序request域名配置');
+  }
 }
 
-// 导出测试函数
-module.exports = {
-  runTests,
-  testConnection,
-  testQuerySyntax,
-  testApiCalls
-}
-
-// 如果直接运行此文件
-if (typeof module !== 'undefined' && module.parent === null) {
-  runTests().then(success => {
-    process.exit(success ? 0 : 1)
-  })
-}
+// 执行测试
+runTests().catch(console.error);

@@ -5,7 +5,7 @@
 	padding: 20rpx;
 }
 
-/* 顶部功能区样式 - 优化后 */
+/* 顶部功能区样�?- 优化�?*/
 .top-bar.data-v-fdb58938 {
 	display: flex;
 	align-items: center;
@@ -15,7 +15,7 @@
 	gap: 20rpx;
 }
 
-/* 虚拟人按钮 - 优化后 */
+/* 虚拟人按�?- 优化�?*/
 .virtual-human-btn.data-v-fdb58938 {
 	display: flex;
 	flex-direction: column;
@@ -44,7 +44,7 @@
 	font-weight: 600;
 }
 
-/* 当前设置显示 - 优化后 */
+/* 当前设置显示 - 优化�?*/
 .current-settings.data-v-fdb58938 {
 	background: rgba(255, 255, 255, 0.95);
 	padding: 18rpx 30rpx;
@@ -65,7 +65,7 @@
 	text-align: center;
 }
 
-/* 对话操作按钮组 - 优化后 */
+/* 对话操作按钮�?- 优化�?*/
 .conversation-actions.data-v-fdb58938 {
 	display: flex;
 	gap: 15rpx;
@@ -161,7 +161,7 @@
 	font-weight: 500;
 }
 
-/* 功能区标题 - 优化后 */
+/* 功能区标�?- 优化�?*/
 .section-title.data-v-fdb58938 {
 	display: block;
 	font-size: 34rpx;
@@ -181,7 +181,7 @@
 	margin: 10rpx auto 0;
 }
 
-/* 角色选择区样式 - 优化后 */
+/* 角色选择区样�?- 优化�?*/
 .role-section.data-v-fdb58938 {
 	margin-bottom: 35rpx;
 	background: rgba(255, 255, 255, 0.95);
@@ -214,16 +214,16 @@
 	border-radius: 25rpx;
 	border: 2rpx solid transparent;
 	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	min-width: 200rpx; /* 确保最小宽度 */
-	max-width: 250rpx; /* 限制最大宽度 */
+	min-width: 200rpx; /* 确保最小宽�?*/
+	max-width: 250rpx; /* 限制最大宽�?*/
 	cursor: pointer;
 	position: relative;
 	overflow: hidden;
 	text-align: center;
-	flex-shrink: 0; /* 防止按钮被压缩 */
+	flex-shrink: 0; /* 防止按钮被压�?*/
 }
 
-/* 添加滚动条样式 */
+/* 添加滚动条样�?*/
 .role-list.data-v-fdb58938::-webkit-scrollbar {
 	height: 6rpx;
 }
@@ -282,7 +282,7 @@
 	line-height: 1.4;
 }
 
-/* 风格设置区样式 - 优化后 */
+/* 风格设置区样�?- 优化�?*/
 .style-section.data-v-fdb58938 {
 	margin-bottom: 35rpx;
 	background: rgba(255, 255, 255, 0.95);
@@ -348,7 +348,7 @@
 	font-weight: 600;
 }
 
-/* 聊天容器样式 - 优化后 */
+/* 聊天容器样式 - 优化�?*/
 .chat-container.data-v-fdb58938 {
 	background: #fff;
 	border-radius: 25rpx;
@@ -435,7 +435,7 @@ to {
 	box-shadow: 0 6rpx 20rpx rgba(24, 144, 255, 0.25);
 }
 
-/* 输入区域样式 - 优化后 */
+/* 输入区域样式 - 优化�?*/
 .input-area.data-v-fdb58938 {
 	display: flex;
 	gap: 25rpx;
@@ -477,7 +477,7 @@ to {
 	box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.4);
 }
 
-/* 模态框样式 - 优化后 */
+/* 模态框样式 - 优化�?*/
 .modal.data-v-fdb58938 {
 	position: fixed;
 	top: 0;
@@ -590,7 +590,7 @@ to {
 	margin-bottom: 0;
 }
 
-/* 历史记录面板样式 - 优化后 */
+/* 历史记录面板样式 - 优化�?*/
 .history-panel.data-v-fdb58938 {
 	position: fixed;
 	top: 0;
@@ -753,7 +753,7 @@ to {
 	color: #999;
 }
 
-/* 遮罩层样式 - 优化后 */
+/* 遮罩层样�?- 优化�?*/
 .overlay.data-v-fdb58938 {
 	position: fixed;
 	top: 0;
@@ -773,7 +773,7 @@ to {
 }
 }
 
-/* 编辑标题弹窗样式 - 优化后 */
+/* 编辑标题弹窗样式 - 优化�?*/
 .title-input.data-v-fdb58938 {
 	width: 100%;
 	height: 90rpx;
@@ -822,7 +822,7 @@ to {
 	box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.4);
 }
 
-/* 加载动画样式 - 优化后 */
+/* 加载动画样式 - 优化�?*/
 .loading-dots.data-v-fdb58938 {
 	display: flex;
 	justify-content: center;
@@ -853,7 +853,7 @@ to {
 }
 }
 
-/* 响应式调整 - 优化后 */
+/* 响应式调�?- 优化�?*/
 @media (max-width: 750rpx) {
 .ai-page.data-v-fdb58938 {
 		padding: 15rpx;
@@ -884,8 +884,8 @@ to {
 	
 	/* 小屏幕角色选择优化 */
 .role-list.data-v-fdb58938 {
-		gap: 15rpx; /* 小屏幕减小间距 */
-		justify-content: flex-start; /* 小屏幕左对齐，便于滚动 */
+		gap: 15rpx; /* 小屏幕减小间�?*/
+		justify-content: flex-start; /* 小屏幕左对齐，便于滚�?*/
 }
 .role-item.data-v-fdb58938 {
 		min-width: 180rpx; /* 小屏幕适当减小宽度 */
