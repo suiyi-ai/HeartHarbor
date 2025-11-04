@@ -996,78 +996,7 @@
 	font-weight: 600;
 }
 
-.virtual-human-btn {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding: 15rpx 25rpx;
-	background: rgba(255, 255, 255, 0.8);
-	border-radius: 20rpx;
-	border: 2rpx solid #E6F3FF;
-	box-shadow: 0 4rpx 15rpx rgba(24, 144, 255, 0.1);
-}
 
-.virtual-icon {
-	font-size: 36rpx;
-	margin-bottom: 5rpx;
-}
-
-.virtual-text {
-	font-size: 24rpx;
-	color: #1890FF;
-	font-weight: bold;
-}
-
-.coming-soon {
-	font-size: 20rpx;
-	color: #999;
-	margin-top: 5rpx;
-}
-
-.current-settings {
-	background: rgba(255, 255, 255, 0.9);
-	padding: 15rpx 25rpx;
-	border-radius: 20rpx;
-	border: 2rpx solid #E6F3FF;
-}
-
-.settings-text {
-	font-size: 26rpx;
-	color: #666;
-	font-weight: 500;
-}
-
-.conversation-actions {
-	display: flex;
-	gap: 15rpx;
-}
-
-.new-conversation-btn, .history-btn {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding: 15rpx 20rpx;
-	background: rgba(255, 255, 255, 0.9);
-	border-radius: 15rpx;
-	border: 2rpx solid #E6F3FF;
-	transition: all 0.3s ease;
-}
-
-.new-conversation-btn:active, .history-btn:active {
-	background: #E6F3FF;
-	transform: scale(0.95);
-}
-
-.action-icon {
-	font-size: 32rpx;
-	margin-bottom: 5rpx;
-}
-
-.action-text {
-	font-size: 22rpx;
-	color: #1890FF;
-	font-weight: 500;
-}
 
 /* 功能区标�?- 优化�?*/
 .section-title {
@@ -1284,7 +1213,7 @@
 	background: #fff;
 	border-radius: 25rpx;
 	padding: 35rpx;
-	height: calc(100vh - 650rpx);
+	min-height: calc(100vh - 600rpx);
 	display: flex;
 	flex-direction: column;
 	box-shadow: 0 8rpx 35rpx rgba(24, 144, 255, 0.15);
@@ -1901,7 +1830,7 @@
 	
 	.chat-container {
 		padding: 25rpx;
-		height: calc(100vh - 550rpx);
+		min-height: calc(100vh - 550rpx);
 	}
 	
 	.avatar {
@@ -1944,6 +1873,49 @@
 	}
 	
 	.feature-item {
+		font-size: 26rpx;
+	}
+}
+
+/* 超小屏幕设备适配 */
+@media screen and (max-width: 320px) {
+	.ai-page {
+		padding: 15rpx;
+	}
+	
+	.top-bar {
+		flex-direction: column;
+		gap: 15rpx;
+		margin-bottom: 20rpx;
+	}
+	
+	.virtual-human-btn, .current-settings, .new-conversation-btn, .history-btn {
+		padding: 12rpx 20rpx;
+		min-height: 70rpx;
+	}
+	
+	.role-item {
+		padding: 20rpx 25rpx;
+		min-width: 160rpx;
+	}
+	
+	.chat-container {
+		min-height: calc(100vh - 550rpx);
+		padding: 25rpx;
+	}
+	
+	.input-area {
+		padding: 15rpx 20rpx;
+	}
+	
+	.input {
+		height: 70rpx;
+		font-size: 26rpx;
+	}
+	
+	.send-btn {
+		width: 100rpx;
+		height: 70rpx;
 		font-size: 26rpx;
 	}
 }

@@ -98,68 +98,8 @@
 	color: #1890FF;
 	font-weight: 600;
 }
-.virtual-human-btn.data-v-fdb58938 {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding: 15rpx 25rpx;
-	background: rgba(255, 255, 255, 0.8);
-	border-radius: 20rpx;
-	border: 2rpx solid #E6F3FF;
-	box-shadow: 0 4rpx 15rpx rgba(24, 144, 255, 0.1);
-}
-.virtual-icon.data-v-fdb58938 {
-	font-size: 36rpx;
-	margin-bottom: 5rpx;
-}
-.virtual-text.data-v-fdb58938 {
-	font-size: 24rpx;
-	color: #1890FF;
-	font-weight: bold;
-}
-.coming-soon.data-v-fdb58938 {
-	font-size: 20rpx;
-	color: #999;
-	margin-top: 5rpx;
-}
-.current-settings.data-v-fdb58938 {
-	background: rgba(255, 255, 255, 0.9);
-	padding: 15rpx 25rpx;
-	border-radius: 20rpx;
-	border: 2rpx solid #E6F3FF;
-}
-.settings-text.data-v-fdb58938 {
-	font-size: 26rpx;
-	color: #666;
-	font-weight: 500;
-}
-.conversation-actions.data-v-fdb58938 {
-	display: flex;
-	gap: 15rpx;
-}
-.new-conversation-btn.data-v-fdb58938, .history-btn.data-v-fdb58938 {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding: 15rpx 20rpx;
-	background: rgba(255, 255, 255, 0.9);
-	border-radius: 15rpx;
-	border: 2rpx solid #E6F3FF;
-	transition: all 0.3s ease;
-}
-.new-conversation-btn.data-v-fdb58938:active, .history-btn.data-v-fdb58938:active {
-	background: #E6F3FF;
-	transform: scale(0.95);
-}
-.action-icon.data-v-fdb58938 {
-	font-size: 32rpx;
-	margin-bottom: 5rpx;
-}
-.action-text.data-v-fdb58938 {
-	font-size: 22rpx;
-	color: #1890FF;
-	font-weight: 500;
-}
+
+
 
 /* 功能区标�?- 优化�?*/
 .section-title.data-v-fdb58938 {
@@ -353,7 +293,7 @@
 	background: #fff;
 	border-radius: 25rpx;
 	padding: 35rpx;
-	height: calc(100vh - 650rpx);
+	min-height: calc(100vh - 600rpx);
 	display: flex;
 	flex-direction: column;
 	box-shadow: 0 8rpx 35rpx rgba(24, 144, 255, 0.15);
@@ -898,7 +838,7 @@ to {
 }
 .chat-container.data-v-fdb58938 {
 		padding: 25rpx;
-		height: calc(100vh - 550rpx);
+		min-height: calc(100vh - 550rpx);
 }
 .avatar.data-v-fdb58938 {
 		width: 75rpx;
@@ -933,6 +873,42 @@ to {
 		padding: 35rpx;
 }
 .feature-item.data-v-fdb58938 {
+		font-size: 26rpx;
+}
+}
+
+/* 超小屏幕设备适配 */
+@media screen and (max-width: 320px) {
+.ai-page.data-v-fdb58938 {
+		padding: 15rpx;
+}
+.top-bar.data-v-fdb58938 {
+		flex-direction: column;
+		gap: 15rpx;
+		margin-bottom: 20rpx;
+}
+.virtual-human-btn.data-v-fdb58938, .current-settings.data-v-fdb58938, .new-conversation-btn.data-v-fdb58938, .history-btn.data-v-fdb58938 {
+		padding: 12rpx 20rpx;
+		min-height: 70rpx;
+}
+.role-item.data-v-fdb58938 {
+		padding: 20rpx 25rpx;
+		min-width: 160rpx;
+}
+.chat-container.data-v-fdb58938 {
+		min-height: calc(100vh - 550rpx);
+		padding: 25rpx;
+}
+.input-area.data-v-fdb58938 {
+		padding: 15rpx 20rpx;
+}
+.input.data-v-fdb58938 {
+		height: 70rpx;
+		font-size: 26rpx;
+}
+.send-btn.data-v-fdb58938 {
+		width: 100rpx;
+		height: 70rpx;
 		font-size: 26rpx;
 }
 }

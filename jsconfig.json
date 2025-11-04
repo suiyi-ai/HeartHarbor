@@ -1,21 +1,25 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2015",
     "module": "commonjs",
+    "checkJs": true,
+    "jsx": "preserve",
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
+    "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
-    },
-    "types": ["vue"]
+    }
   },
+  "include": [
+    "**/*.js",
+    "**/*.vue"
+  ],
   "exclude": [
     "node_modules",
     "unpackage",
-    "static"
-  ],
-  "vueCompilerOptions": {
-    "target": 2.7
-  }
+    "dist"
+  ]
 }
