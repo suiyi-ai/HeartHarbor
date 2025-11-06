@@ -1,42 +1,81 @@
 <template>
 	<view class="register-page">
-		<view class="register-header">
-			<text class="register-title">创建账户</text>
-			<text class="register-subtitle">加入心屿社区</text>
+		<view class="header">
+			<text class="title">加入心屿</text>
+			<text class="subtitle">开启您的心理关怀之旅</text>
 		</view>
 		
-		<view class="register-form">
+		<view class="form-container">
 			<view class="input-group">
-				<text class="input-label">邮箱地址</text>
-				<input class="input-field" placeholder="请输入邮箱地址" type="email" v-model="email" />
-			</view>
-			
-			<view class="input-group">
-				<text class="input-label">设置密码</text>
-				<input class="input-field" password placeholder="请设置登录密码" v-model="password" />
-			</view>
-			
-			<view class="input-group">
-				<text class="input-label">确认密码</text>
-				<input class="input-field" password placeholder="请再次输入密码" v-model="confirmPassword" />
+				<view class="input-item">
+					<text class="label">手机号</text>
+					<input 
+						v-model="phone" 
+						class="input" 
+						placeholder="请输入手机号"
+						type="number"
+					/>
+				</view>
+				<view class="input-item">
+					<text class="label">验证码</text>
+					<view class="code-input-group">
+						<input 
+							v-model="code" 
+							class="code-input" 
+							placeholder="请输入验证码"
+							type="number"
+						/>
+						<button 
+							class="send-code-btn" 
+							:disabled="!canSendCode"
+							@click="sendCode"
+						>
+							{{ countdown > 0 ? `${countdown}s后重发` : '获取验证码' }}
+						</button>
+					</view>
+				</view>
+				<view class="input-item">
+					<text class="label">设置密码</text>
+					<input 
+						v-model="password" 
+						class="input" 
+						placeholder="请设置密码"
+						password
+					/>
+				</view>
+				<view class="input-item">
+					<text class="label">确认密码</text>
+					<input 
+						v-model="confirmPassword" 
+						class="input" 
+						placeholder="请再次输入密码"
+						password
+					/>
+				</view>
 			</view>
 			
 			<view class="agreement">
-				<view class="agreement-checkbox">
-					<checkbox class="checkbox" :checked="agreementChecked" @click="toggleAgreement" />
-				</view>
-				<text class="agreement-text">我已阅读并同意</text>
-				<text class="agreement-link" @click="navigateToAgreement">《用户协议》</text>
-				<text class="agreement-text">和</text>
-				<text class="agreement-link" @click="navigateToPrivacy">《隐私政策》</text>
+				<label class="agreement-checkbox">
+					<checkbox 
+						:checked="agreed" 
+						@change="agreed = $event.detail.value.length > 0" 
+						color="#1890FF"
+					/>
+					<text class="agreement-text">
+						我已阅读并同意
+						<text class="agreement-link" @click="showAgreement">《用户协议》</text>
+						和
+						<text class="agreement-link" @click="showPrivacy">《隐私政策》</text>
+					</text>
+				</label>
 			</view>
 			
-			<button class="register-submit-btn" @click="handleRegister">注册</button>
-		</view>
-		
-		<view class="register-footer">
-			<text>已有账户？</text>
-			<text class="login-link" @click="navigateToLogin">立即登录</text>
+			<button class="register-btn" :disabled="!agreed" @click="handleRegister">注册</button>
+			
+			<view class="login-link">
+				<text class="login-text">已有账号？</text>
+				<text class="login-link-text" @click="navigateToLogin">立即登录</text>
+			</view>
 		</view>
 	</view>
 </template>
@@ -45,31 +84,63 @@
 	export default {
 		data() {
 			return {
-				email: '',
+				phone: '',
+				code: '',
 				password: '',
 				confirmPassword: '',
-				agreementChecked: false
+				agreed: false,
+				countdown: 0,
+				canSendCode: true
 			}
 		},
 		methods: {
-			toggleAgreement() {
-				this.agreementChecked = !this.agreementChecked
-			},
-			handleRegister() {
-				// 表单验证
-				if (!this.email) {
+			sendCode() {
+				if (!this.phone) {
 					uni.showToast({
-						title: '请输入邮箱地址',
+						title: '请输入手机号',
 						icon: 'none'
 					})
 					return
 				}
 				
-				// 邮箱格式验证
-				const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-				if (!emailRegex.test(this.email)) {
+				if (!/^1[3-9]\d{9}$/.test(this.phone)) {
 					uni.showToast({
-						title: '邮箱格式不正确',
+						title: '请输入正确的手机号',
+						icon: 'none'
+					})
+					return
+				}
+				
+				// 模拟发送验证码
+				this.countdown = 60
+				this.canSendCode = false
+				
+				const timer = setInterval(() => {
+					this.countdown--
+					if (this.countdown <= 0) {
+						this.canSendCode = true
+						clearInterval(timer)
+					}
+				}, 1000)
+				
+				uni.showToast({
+					title: '验证码已发送',
+					icon: 'success'
+				})
+			},
+			
+			handleRegister() {
+				if (!this.phone) {
+					uni.showToast({
+						title: '请输入手机号',
+						icon: 'none'
+					})
+					return
+				}
+				
+				if (!this.code) {
+					uni.showToast({
+						title: '请输入验证码',
 						icon: 'none'
 					})
 					return
@@ -77,7 +148,7 @@
 				
 				if (!this.password) {
 					uni.showToast({
-						title: '请输入密码',
+						title: '请设置密码',
 						icon: 'none'
 					})
 					return
@@ -85,7 +156,7 @@
 				
 				if (this.password.length < 6) {
 					uni.showToast({
-						title: '密码长度至少6位',
+						title: '密码长度不能少于6位',
 						icon: 'none'
 					})
 					return
@@ -93,51 +164,54 @@
 				
 				if (this.password !== this.confirmPassword) {
 					uni.showToast({
-						title: '两次密码输入不一致',
+						title: '两次输入的密码不一致',
 						icon: 'none'
 					})
 					return
 				}
 				
-				if (!this.agreementChecked) {
-					uni.showToast({
-						title: '请先阅读并同意协议',
-						icon: 'none'
-					})
-					return
-				}
-				
-				// 模拟注册成功（后续会替换为Supabase集成）
-				uni.showToast({
-					title: '注册成功，已自动登录',
-					icon: 'success'
+				// 模拟注册成功
+				uni.showLoading({
+					title: '注册中...'
 				})
 				
-				// 注册成功后，自动登录
-				// 获取页面栈中的 mine.vue 页面实例
-				const pages = getCurrentPages()
-				const prevPage = pages[pages.length - 2]
-				if (prevPage && prevPage.route === 'pages/mine/mine') {
-					prevPage.$vm.handleLoginSuccess && prevPage.$vm.handleLoginSuccess()
-				}
-				
-				// 延迟返回上一页
 				setTimeout(() => {
+					uni.hideLoading()
+					// 存储登录状态
+					uni.setStorageSync('isLogin', true)
+					uni.setStorageSync('userInfo', {
+						phone: this.phone,
+						name: '心屿用户'
+					})
+					
+					uni.showToast({
+						title: '注册成功',
+						icon: 'success'
+					})
+					
+					// 返回上一页或跳转到首页
 					uni.navigateBack()
 				}, 1500)
 			},
-			navigateToAgreement() {
-				uni.showToast({
-					title: '用户协议查看功能开发中',
-					icon: 'none'
+			
+			showAgreement() {
+				uni.showModal({
+					title: '用户协议',
+					content: '心屿用户协议内容...',
+					showCancel: false,
+					confirmText: '知道了'
 				})
 			},
-			navigateToPrivacy() {
-				uni.showToast({
-					title: '隐私政策查看功能开发中',
-					icon: 'none'
+			
+			showPrivacy() {
+				uni.showModal({
+					title: '隐私政策',
+					content: '心屿隐私政策内容...',
+					showCancel: false,
+					confirmText: '知道了'
 				})
 			},
+			
 			navigateToLogin() {
 				uni.navigateTo({
 					url: '/pages/login/login'
@@ -151,16 +225,16 @@
 .register-page {
 	min-height: 100vh;
 	background: linear-gradient(135deg, #E6F3FF 0%, #F5F9FF 100%);
-	padding: 40rpx;
+	padding: 40rpx 30rpx;
 }
 
-.register-header {
+.header {
 	text-align: center;
-	margin-bottom: 60rpx;
-	padding-top: 60rpx;
+	margin-bottom: 80rpx;
+	margin-top: 60rpx;
 }
 
-.register-title {
+.title {
 	display: block;
 	font-size: 48rpx;
 	font-weight: bold;
@@ -168,16 +242,16 @@
 	margin-bottom: 20rpx;
 }
 
-.register-subtitle {
+.subtitle {
 	display: block;
 	font-size: 28rpx;
 	color: #666;
 }
 
-.register-form {
+.form-container {
 	background: #fff;
 	border-radius: 20rpx;
-	padding: 40rpx;
+	padding: 40rpx 30rpx;
 	box-shadow: 0 4rpx 20rpx rgba(24, 144, 255, 0.1);
 }
 
@@ -185,7 +259,11 @@
 	margin-bottom: 40rpx;
 }
 
-.input-label {
+.input-item {
+	margin-bottom: 40rpx;
+}
+
+.label {
 	display: block;
 	font-size: 28rpx;
 	color: #333;
@@ -193,76 +271,103 @@
 	font-weight: 500;
 }
 
-.input-field {
+.input {
 	width: 100%;
 	height: 80rpx;
-	background: #F5F9FF;
-	border-radius: 40rpx;
+	border: 2rpx solid #E8E8E8;
+	border-radius: 20rpx;
 	padding: 0 30rpx;
 	font-size: 28rpx;
-	border: 2rpx solid #E6F3FF;
+	background: #F8F8F8;
 	box-sizing: border-box;
 }
 
-.input-field:focus {
+.input:focus {
 	border-color: #1890FF;
+	background: #fff;
 }
 
-
-
-.agreement {
+.code-input-group {
 	display: flex;
 	align-items: center;
-	flex-wrap: wrap;
-	margin-bottom: 40rpx;
-	padding: 20rpx;
-	background: #F5F9FF;
-	border-radius: 10rpx;
+	gap: 20rpx;
+}
+
+.code-input {
+	flex: 1;
+	height: 80rpx;
+	border: 2rpx solid #E8E8E8;
+	border-radius: 20rpx;
+	padding: 0 30rpx;
+	font-size: 28rpx;
+	background: #F8F8F8;
+	box-sizing: border-box;
+}
+
+.send-code-btn {
+	width: 200rpx;
+	height: 80rpx;
+	background: #1890FF;
+	color: white;
+	border-radius: 20rpx;
+	font-size: 24rpx;
+	border: none;
+	white-space: nowrap;
+}
+
+.send-code-btn:disabled {
+	background: #ccc;
+}
+
+.agreement {
+	margin-bottom: 60rpx;
 }
 
 .agreement-checkbox {
-	margin-right: 10rpx;
-}
-
-.checkbox {
-	transform: scale(0.8);
+	display: flex;
+	align-items: flex-start;
+	font-size: 24rpx;
+	color: #666;
+	line-height: 1.5;
 }
 
 .agreement-text {
-	font-size: 24rpx;
-	color: #666;
-	margin-right: 5rpx;
+	flex: 1;
+	margin-left: 10rpx;
 }
 
 .agreement-link {
-	font-size: 24rpx;
 	color: #1890FF;
-	margin-right: 5rpx;
 }
 
-.register-submit-btn {
+.register-btn {
 	width: 100%;
-	height: 88rpx;
+	height: 80rpx;
 	background: linear-gradient(135deg, #1890FF 0%, #40A9FF 100%);
 	color: white;
-	border-radius: 44rpx;
-	font-size: 32rpx;
-	font-weight: bold;
+	border-radius: 40rpx;
+	font-size: 30rpx;
 	border: none;
+	margin-bottom: 40rpx;
 }
 
-.register-footer {
-	text-align: center;
-	margin-top: 40rpx;
-}
-
-.register-footer text {
-	font-size: 26rpx;
-	color: #666;
+.register-btn:disabled {
+	background: #ccc;
 }
 
 .login-link {
+	text-align: center;
+}
+
+.login-text {
+	font-size: 26rpx;
+	color: #666;
+	margin-right: 10rpx;
+}
+
+.login-link-text {
+	font-size: 26rpx;
 	color: #1890FF;
-	margin-left: 10rpx;
+	font-weight: 500;
 }
 </style>

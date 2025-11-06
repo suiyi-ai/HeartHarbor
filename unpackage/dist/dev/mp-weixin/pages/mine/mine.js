@@ -3,18 +3,26 @@ const common_vendor = require("../../common/vendor.js");
 const _sfc_main = {
   data() {
     return {
-      isLoggedIn: false
-      // 默认未登录状态
+      isLogin: false,
+      userInfo: {}
     };
   },
   onLoad() {
-    const loginStatus = common_vendor.index.getStorageSync("isLoggedIn");
-    if (loginStatus) {
-      this.isLoggedIn = true;
-    }
+    this.checkLoginStatus();
   },
   methods: {
+    checkLoginStatus() {
+      this.isLogin = common_vendor.index.getStorageSync("isLogin") || false;
+      this.userInfo = common_vendor.index.getStorageSync("userInfo") || {};
+    },
     navigateTo(page) {
+      if (!this.isLogin) {
+        common_vendor.index.showToast({
+          title: "请先登录",
+          icon: "none"
+        });
+        return;
+      }
       switch (page) {
         case "settings":
           common_vendor.index.showToast({
@@ -60,32 +68,16 @@ const _sfc_main = {
         url: "/pages/register/register"
       });
     },
-    // 登录成功的回调方法
-    handleLoginSuccess() {
-      this.isLoggedIn = true;
-      common_vendor.index.setStorageSync("isLoggedIn", true);
-      common_vendor.index.showToast({
-        title: "登录成功",
-        icon: "success"
-      });
-    },
-    // 登录成功的回调方法
-    handleLoginSuccess() {
-      this.isLoggedIn = true;
-      common_vendor.index.setStorageSync("isLoggedIn", true);
-      common_vendor.index.showToast({
-        title: "登录成功",
-        icon: "success"
-      });
-    },
     logout() {
       common_vendor.index.showModal({
         title: "确认退出",
         content: "确定要退出登录吗？",
         success: (res) => {
           if (res.confirm) {
-            this.isLoggedIn = false;
-            common_vendor.index.removeStorageSync("isLoggedIn");
+            common_vendor.index.removeStorageSync("isLogin");
+            common_vendor.index.removeStorageSync("userInfo");
+            this.isLogin = false;
+            this.userInfo = {};
             common_vendor.index.showToast({
               title: "退出成功",
               icon: "success"
@@ -98,18 +90,25 @@ const _sfc_main = {
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   return common_vendor.e({
-    a: !$data.isLoggedIn
-  }, !$data.isLoggedIn ? {
-    b: common_vendor.o((...args) => $options.navigateToLogin && $options.navigateToLogin(...args)),
-    c: common_vendor.o((...args) => $options.navigateToRegister && $options.navigateToRegister(...args))
+    a: $data.isLogin
+  }, $data.isLogin ? {
+    b: common_vendor.t($data.userInfo.name || "心屿用户")
   } : {
-    d: common_vendor.o(($event) => $options.navigateTo("settings")),
-    e: common_vendor.o(($event) => $options.navigateTo("records")),
-    f: common_vendor.o(($event) => $options.navigateTo("favorites")),
-    g: common_vendor.o(($event) => $options.navigateTo("feedback")),
-    h: common_vendor.o(($event) => $options.navigateTo("about")),
-    i: common_vendor.o((...args) => $options.logout && $options.logout(...args))
-  });
+    c: common_vendor.o((...args) => $options.navigateToLogin && $options.navigateToLogin(...args)),
+    d: common_vendor.o((...args) => $options.navigateToRegister && $options.navigateToRegister(...args))
+  }, {
+    e: $data.isLogin
+  }, $data.isLogin ? {
+    f: common_vendor.o(($event) => $options.navigateTo("settings")),
+    g: common_vendor.o(($event) => $options.navigateTo("records")),
+    h: common_vendor.o(($event) => $options.navigateTo("favorites")),
+    i: common_vendor.o(($event) => $options.navigateTo("feedback")),
+    j: common_vendor.o(($event) => $options.navigateTo("about"))
+  } : {}, {
+    k: $data.isLogin
+  }, $data.isLogin ? {
+    l: common_vendor.o((...args) => $options.logout && $options.logout(...args))
+  } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-7c2ebfa5"]]);
 wx.createPage(MiniProgramPage);
