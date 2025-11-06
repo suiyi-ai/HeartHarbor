@@ -315,9 +315,11 @@ const _sfc_main = {
         this.scrollTop = 99999;
       });
     },
-    // 显示虚拟人功能预�?
+    // 跳转到虚拟人页面
     showVirtualHumanPreview() {
-      this.showVirtualHumanModal = true;
+      common_vendor.index.navigateTo({
+        url: "/pages/virtual-human/virtual-human"
+      });
     },
     // 关闭虚拟人功能预�?
     closeVirtualHumanModal() {
@@ -340,7 +342,7 @@ const _sfc_main = {
           this.inputText
         );
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/ai/ai.vue:585", "保存用户消息失败:", error);
+        common_vendor.index.__f__("error", "at pages/ai/ai.vue:587", "保存用户消息失败:", error);
       }
       const userMessage = this.inputText;
       this.inputText = "";
@@ -361,7 +363,7 @@ const _sfc_main = {
             aiResponse
           );
         } catch (error) {
-          common_vendor.index.__f__("error", "at pages/ai/ai.vue:615", "保存AI消息失败:", error);
+          common_vendor.index.__f__("error", "at pages/ai/ai.vue:617", "保存AI消息失败:", error);
         }
         common_vendor.index.showToast({
           title: "AI回复已生成",
@@ -369,7 +371,7 @@ const _sfc_main = {
           duration: 1500
         });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/ai/ai.vue:626", "Dify API调用失败:", error);
+        common_vendor.index.__f__("error", "at pages/ai/ai.vue:628", "Dify API调用失败:", error);
         let errorTitle = "网络异常";
         if (error.message.includes("超时")) {
           errorTitle = "请求超时";
@@ -394,7 +396,7 @@ const _sfc_main = {
             fallbackResponse
           );
         } catch (error2) {
-          common_vendor.index.__f__("error", "at pages/ai/ai.vue:665", "保存降级消息失败:", error2);
+          common_vendor.index.__f__("error", "at pages/ai/ai.vue:667", "保存降级消息失败:", error2);
         }
         common_vendor.index.showToast({
           title: `${errorTitle}�?{errorMessage}`,
@@ -421,9 +423,9 @@ const _sfc_main = {
         const timeout = setTimeout(() => {
           reject(new Error("请求超时，请检查网络连接"));
         }, 1e4);
-        common_vendor.index.__f__("log", "at pages/ai/ai.vue:703", "Dify API配置:", this.difyConfig);
-        common_vendor.index.__f__("log", "at pages/ai/ai.vue:704", "完整URL:", this.difyConfig.apiUrl + this.difyConfig.endpoint);
-        common_vendor.index.__f__("log", "at pages/ai/ai.vue:705", "结构化输入数据", inputs);
+        common_vendor.index.__f__("log", "at pages/ai/ai.vue:705", "Dify API配置:", this.difyConfig);
+        common_vendor.index.__f__("log", "at pages/ai/ai.vue:706", "完整URL:", this.difyConfig.apiUrl + this.difyConfig.endpoint);
+        common_vendor.index.__f__("log", "at pages/ai/ai.vue:707", "结构化输入数据", inputs);
         common_vendor.index.request({
           url: this.difyConfig.apiUrl + this.difyConfig.endpoint,
           method: "POST",
@@ -446,7 +448,7 @@ const _sfc_main = {
           },
           success: (res) => {
             clearTimeout(timeout);
-            common_vendor.index.__f__("log", "at pages/ai/ai.vue:728", "Dify API响应:", res);
+            common_vendor.index.__f__("log", "at pages/ai/ai.vue:730", "Dify API响应:", res);
             if (res.statusCode === 0) {
               reject(new Error("网络连接异常，请检查网络设置"));
               return;
@@ -486,7 +488,7 @@ const _sfc_main = {
           },
           fail: (err) => {
             clearTimeout(timeout);
-            common_vendor.index.__f__("error", "at pages/ai/ai.vue:777", "Dify API调用失败:", err);
+            common_vendor.index.__f__("error", "at pages/ai/ai.vue:779", "Dify API调用失败:", err);
             let errorMessage = "网络请求失败";
             if (err.errMsg) {
               if (err.errMsg.includes("timeout")) {

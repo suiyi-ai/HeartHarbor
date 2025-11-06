@@ -55,6 +55,15 @@
 				"navigationBarBackgroundColor": "#E6F3FF",
 				"navigationBarTextStyle": "black"
 			}
+		},
+		{
+			"path": "pages/virtual-human/virtual-human",
+			"style": {
+				"navigationBarTitleText": "虚拟人伙伴",
+				"navigationBarBackgroundColor": "#E6F3FF",
+				"navigationBarTextStyle": "black",
+				"enablePullDownRefresh": false
+			}
 		}
 	],
 	"globalStyle": {

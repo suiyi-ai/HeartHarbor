@@ -9,6 +9,7 @@ if (!Math) {
   "./pages/mine/mine.js";
   "./pages/login/login.js";
   "./pages/register/register.js";
+  "./pages/virtual-human/virtual-human.js";
 }
 const _sfc_main = {
   onLaunch: function() {

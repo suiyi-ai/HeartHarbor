@@ -550,15 +550,17 @@
 				})
 			},
 			
-			// 显示虚拟人功能预�?
-			showVirtualHumanPreview() {
-				this.showVirtualHumanModal = true
-			},
-			
-			// 关闭虚拟人功能预�?
-			closeVirtualHumanModal() {
-				this.showVirtualHumanModal = false
-			},
+		// 跳转到虚拟人页面
+		showVirtualHumanPreview() {
+			uni.navigateTo({
+				url: '/pages/virtual-human/virtual-human'
+			})
+		},
+		
+		// 关闭虚拟人功能预�?
+		closeVirtualHumanModal() {
+			this.showVirtualHumanModal = false
+		},
 			
 			async sendMessage() {
 				if (!this.inputText.trim()) return
