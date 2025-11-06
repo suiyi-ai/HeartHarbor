@@ -4,7 +4,9 @@
     "pages/hole/hole",
     "pages/ai/ai",
     "pages/library/library",
-    "pages/mine/mine"
+    "pages/mine/mine",
+    "pages/login/login",
+    "pages/register/register"
   ],
   "window": {
     "navigationBarTextStyle": "black",

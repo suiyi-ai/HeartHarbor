@@ -1,6 +1,18 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const _sfc_main = {
+  data() {
+    return {
+      isLoggedIn: false
+      // 默认未登录状态
+    };
+  },
+  onLoad() {
+    const loginStatus = common_vendor.index.getStorageSync("isLoggedIn");
+    if (loginStatus) {
+      this.isLoggedIn = true;
+    }
+  },
   methods: {
     navigateTo(page) {
       switch (page) {
@@ -38,12 +50,42 @@ const _sfc_main = {
           break;
       }
     },
+    navigateToLogin() {
+      common_vendor.index.navigateTo({
+        url: "/pages/login/login"
+      });
+    },
+    navigateToRegister() {
+      common_vendor.index.navigateTo({
+        url: "/pages/register/register"
+      });
+    },
+    // 登录成功的回调方法
+    handleLoginSuccess() {
+      this.isLoggedIn = true;
+      common_vendor.index.setStorageSync("isLoggedIn", true);
+      common_vendor.index.showToast({
+        title: "登录成功",
+        icon: "success"
+      });
+    },
+    // 登录成功的回调方法
+    handleLoginSuccess() {
+      this.isLoggedIn = true;
+      common_vendor.index.setStorageSync("isLoggedIn", true);
+      common_vendor.index.showToast({
+        title: "登录成功",
+        icon: "success"
+      });
+    },
     logout() {
       common_vendor.index.showModal({
         title: "确认退出",
         content: "确定要退出登录吗？",
         success: (res) => {
           if (res.confirm) {
+            this.isLoggedIn = false;
+            common_vendor.index.removeStorageSync("isLoggedIn");
             common_vendor.index.showToast({
               title: "退出成功",
               icon: "success"
@@ -55,14 +97,19 @@ const _sfc_main = {
   }
 };
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
-  return {
-    a: common_vendor.o(($event) => $options.navigateTo("settings")),
-    b: common_vendor.o(($event) => $options.navigateTo("records")),
-    c: common_vendor.o(($event) => $options.navigateTo("favorites")),
-    d: common_vendor.o(($event) => $options.navigateTo("feedback")),
-    e: common_vendor.o(($event) => $options.navigateTo("about")),
-    f: common_vendor.o((...args) => $options.logout && $options.logout(...args))
-  };
+  return common_vendor.e({
+    a: !$data.isLoggedIn
+  }, !$data.isLoggedIn ? {
+    b: common_vendor.o((...args) => $options.navigateToLogin && $options.navigateToLogin(...args)),
+    c: common_vendor.o((...args) => $options.navigateToRegister && $options.navigateToRegister(...args))
+  } : {
+    d: common_vendor.o(($event) => $options.navigateTo("settings")),
+    e: common_vendor.o(($event) => $options.navigateTo("records")),
+    f: common_vendor.o(($event) => $options.navigateTo("favorites")),
+    g: common_vendor.o(($event) => $options.navigateTo("feedback")),
+    h: common_vendor.o(($event) => $options.navigateTo("about")),
+    i: common_vendor.o((...args) => $options.logout && $options.logout(...args))
+  });
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-7c2ebfa5"]]);
 wx.createPage(MiniProgramPage);
