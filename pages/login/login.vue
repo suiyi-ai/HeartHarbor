@@ -8,12 +8,11 @@
 		<view class="form-container">
 			<view class="input-group">
 				<view class="input-item">
-					<text class="label">手机号</text>
+					<text class="label">用户名/邮箱</text>
 					<input 
-						v-model="phone" 
+						v-model="identifier" 
 						class="input" 
-						placeholder="请输入手机号"
-						type="number"
+						placeholder="请输入用户名或邮箱"
 					/>
 				</view>
 				<view class="input-item">
@@ -53,18 +52,20 @@
 </template>
 
 <script>
+	import authService from '@/utils/auth.js'
+	
 	export default {
 		data() {
 			return {
-				phone: '',
+				identifier: '',
 				password: ''
 			}
 		},
 		methods: {
-			handleLogin() {
-				if (!this.phone) {
+			async handleLogin() {
+				if (!this.identifier) {
 					uni.showToast({
-						title: '请输入手机号',
+						title: '请输入用户名或邮箱',
 						icon: 'none'
 					})
 					return
@@ -78,40 +79,161 @@
 					return
 				}
 				
-				// 模拟登录成功
 				uni.showLoading({
 					title: '登录中...'
 				})
 				
-				setTimeout(() => {
+				try {
+					const result = await authService.login(this.identifier, this.password)
 					uni.hideLoading()
-					// 存储登录状态
-					uni.setStorageSync('isLogin', true)
-					uni.setStorageSync('userInfo', {
-						phone: this.phone,
-						name: '心屿用户'
-					})
 					
+					if (result.success) {
+						uni.showToast({
+							title: '登录成功',
+							icon: 'success',
+							duration: 1000
+						})
+						
+						// 登录成功后，清除之前的匿名用户对话缓存
+						// 这样用户登录后会看到自己的对话，而不是匿名用户的对话
+						
+						// 等待 Toast 显示后再跳转
+						// 使用 reLaunch 确保能正确跳转到 tabBar 页面
+						setTimeout(() => {
+							uni.reLaunch({
+								url: '/pages/mine/mine',
+								success: () => {
+									console.log('导航成功：跳转到我的页面')
+								},
+								fail: (err) => {
+									console.error('导航失败:', err)
+									// 如果 reLaunch 失败，尝试使用 switchTab
+									uni.switchTab({
+										url: '/pages/mine/mine',
+										success: () => {
+											console.log('使用 switchTab 导航成功')
+										},
+										fail: (err2) => {
+											console.error('switchTab 也失败:', err2)
+											uni.showToast({
+												title: '跳转失败，请手动切换到"我的"页面',
+												icon: 'none',
+												duration: 2000
+											})
+										}
+									})
+								}
+							})
+						}, 1200)
+					} else {
+						uni.showToast({
+							title: result.message || '登录失败',
+							icon: 'none'
+						})
+					}
+				} catch (error) {
+					uni.hideLoading()
 					uni.showToast({
-						title: '登录成功',
-						icon: 'success'
+						title: error.message || '登录失败，请重试',
+						icon: 'none'
 					})
-					
-					// 返回上一页或跳转到首页
-					uni.navigateBack()
-				}, 1500)
+				}
 			},
 			
-			handleSocialLogin(type) {
-				uni.showToast({
-					title: `${type === 'wechat' ? '微信' : 'QQ'}登录功能开发中`,
-					icon: 'none'
+			async handleSocialLogin(type) {
+				if (type !== 'wechat') {
+					uni.showToast({
+						title: '暂不支持该登录方式',
+						icon: 'none'
+					})
+					return
+				}
+
+				uni.showLoading({
+					title: '微信登录中...'
 				})
+
+				try {
+					const result = await authService.loginWithWeChat()
+					uni.hideLoading()
+
+					if (result.success) {
+						uni.showToast({
+							title: '登录成功',
+							icon: 'success',
+							duration: 1000
+						})
+
+						// 登录成功后跳转到"我的"页面
+						// 使用 reLaunch 确保能正确跳转到 tabBar 页面
+						setTimeout(() => {
+							uni.reLaunch({
+								url: '/pages/mine/mine',
+								success: () => {
+									console.log('导航成功：跳转到我的页面')
+								},
+								fail: (err) => {
+									console.error('导航失败:', err)
+									// 如果 reLaunch 失败，尝试使用 switchTab
+									uni.switchTab({
+										url: '/pages/mine/mine',
+										success: () => {
+											console.log('使用 switchTab 导航成功')
+										},
+										fail: (err2) => {
+											console.error('switchTab 也失败:', err2)
+											uni.showToast({
+												title: '跳转失败，请手动切换到"我的"页面',
+												icon: 'none',
+												duration: 2000
+											})
+										}
+									})
+								}
+							})
+						}, 1200)
+					} else {
+						uni.showToast({
+							title: result.message || '登录失败',
+							icon: 'none'
+						})
+					}
+				} catch (error) {
+					uni.hideLoading()
+					
+					// 处理特定的错误情况
+					let errorMessage = '微信登录失败，请重试'
+					if (error.message) {
+						if (error.message.includes('getUserProfile')) {
+							errorMessage = '需要授权才能使用微信登录'
+						} else if (error.message.includes('login')) {
+							errorMessage = '获取微信登录凭证失败'
+						} else {
+							errorMessage = error.message
+						}
+					}
+
+					uni.showToast({
+						title: errorMessage,
+						icon: 'none',
+						duration: 2000
+					})
+				}
 			},
 			
 			navigateToRegister() {
 				uni.navigateTo({
-					url: '/pages/register/register'
+					url: '/pages/register/register',
+					success: () => {
+						console.log('导航成功：跳转到注册页面')
+					},
+					fail: (err) => {
+						console.error('导航失败:', err)
+						uni.showToast({
+							title: '页面跳转失败，请重试',
+							icon: 'none'
+						})
+					}
 				})
 			},
 			

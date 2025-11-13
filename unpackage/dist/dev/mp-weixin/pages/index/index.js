@@ -38,12 +38,32 @@ const _sfc_main = {
       switch (page) {
         case "hole":
           common_vendor.index.switchTab({
-            url: "/pages/hole/hole"
+            url: "/pages/hole/hole",
+            success: () => {
+              common_vendor.index.__f__("log", "at pages/index/index.vue:141", "导航成功：跳转到树洞页面");
+            },
+            fail: (err) => {
+              common_vendor.index.__f__("error", "at pages/index/index.vue:144", "导航失败:", err);
+              common_vendor.index.showToast({
+                title: "页面跳转失败，请重试",
+                icon: "none"
+              });
+            }
           });
           break;
         case "ai":
           common_vendor.index.switchTab({
-            url: "/pages/ai/ai"
+            url: "/pages/ai/ai",
+            success: () => {
+              common_vendor.index.__f__("log", "at pages/index/index.vue:156", "导航成功：跳转到AI伙伴页面");
+            },
+            fail: (err) => {
+              common_vendor.index.__f__("error", "at pages/index/index.vue:159", "导航失败:", err);
+              common_vendor.index.showToast({
+                title: "页面跳转失败，请重试",
+                icon: "none"
+              });
+            }
           });
           break;
         case "test":

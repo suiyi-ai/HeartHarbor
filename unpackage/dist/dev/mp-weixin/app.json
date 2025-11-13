@@ -4,10 +4,13 @@
     "pages/hole/hole",
     "pages/ai/ai",
     "pages/library/library",
+    "pages/library/article-detail",
     "pages/mine/mine",
     "pages/login/login",
     "pages/register/register",
-    "pages/virtual-human/virtual-human"
+    "pages/mood/mood",
+    "pages/favorites/favorites",
+    "pages/virtual-human/xf-virtual-human"
   ],
   "window": {
     "navigationBarTextStyle": "black",
@@ -52,6 +55,23 @@
         "selectedIconPath": "static/icon/my.png"
       }
     ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "需要获取您的位置信息，用于提供更好的服务"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ],
+  "requiredBackgroundModes": [
+    "audio"
+  ],
+  "networkTimeout": {
+    "request": 30000,
+    "connectSocket": 30000,
+    "uploadFile": 30000,
+    "downloadFile": 30000
   },
   "usingComponents": {}
 }

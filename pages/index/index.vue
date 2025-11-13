@@ -136,12 +136,32 @@
 				switch(page) {
 					case 'hole':
 						uni.switchTab({
-							url: '/pages/hole/hole'
+							url: '/pages/hole/hole',
+							success: () => {
+								console.log('导航成功：跳转到树洞页面')
+							},
+							fail: (err) => {
+								console.error('导航失败:', err)
+								uni.showToast({
+									title: '页面跳转失败，请重试',
+									icon: 'none'
+								})
+							}
 						})
 						break
 					case 'ai':
 						uni.switchTab({
-							url: '/pages/ai/ai'
+							url: '/pages/ai/ai',
+							success: () => {
+								console.log('导航成功：跳转到AI伙伴页面')
+							},
+							fail: (err) => {
+								console.error('导航失败:', err)
+								uni.showToast({
+									title: '页面跳转失败，请重试',
+									icon: 'none'
+								})
+							}
 						})
 						break
 					case 'test':

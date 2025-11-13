@@ -1,45 +1,34 @@
 <template>
 	<view class="register-page">
 		<view class="header">
-			<text class="title">加入心屿</text>
-			<text class="subtitle">开启您的心理关怀之旅</text>
+			<text class="title">创建账号</text>
+			<text class="subtitle">加入心屿，开启心理关怀之旅</text>
 		</view>
 		
 		<view class="form-container">
 			<view class="input-group">
 				<view class="input-item">
-					<text class="label">手机号</text>
+					<text class="label">用户名</text>
 					<input 
-						v-model="phone" 
+						v-model="username" 
 						class="input" 
-						placeholder="请输入手机号"
-						type="number"
+						placeholder="请输入用户名（3-20位字母、数字或下划线）"
 					/>
 				</view>
 				<view class="input-item">
-					<text class="label">验证码</text>
-					<view class="code-input-group">
-						<input 
-							v-model="code" 
-							class="code-input" 
-							placeholder="请输入验证码"
-							type="number"
-						/>
-						<button 
-							class="send-code-btn" 
-							:disabled="!canSendCode"
-							@click="sendCode"
-						>
-							{{ countdown > 0 ? `${countdown}s后重发` : '获取验证码' }}
-						</button>
-					</view>
+					<text class="label">邮箱</text>
+					<input 
+						v-model="email" 
+						class="input" 
+						placeholder="请输入邮箱地址"
+					/>
 				</view>
 				<view class="input-item">
-					<text class="label">设置密码</text>
+					<text class="label">密码</text>
 					<input 
 						v-model="password" 
 						class="input" 
-						placeholder="请设置密码"
+						placeholder="请输入密码（至少6位）"
 						password
 					/>
 				</view>
@@ -52,25 +41,29 @@
 						password
 					/>
 				</view>
+				<view class="input-item">
+					<text class="label">昵称</text>
+					<input 
+						v-model="nickname" 
+						class="input" 
+						placeholder="请输入昵称（可选）"
+					/>
+				</view>
 			</view>
 			
 			<view class="agreement">
-				<label class="agreement-checkbox">
-					<checkbox 
-						:checked="agreed" 
-						@change="agreed = $event.detail.value.length > 0" 
-						color="#1890FF"
-					/>
-					<text class="agreement-text">
-						我已阅读并同意
-						<text class="agreement-link" @click="showAgreement">《用户协议》</text>
-						和
-						<text class="agreement-link" @click="showPrivacy">《隐私政策》</text>
-					</text>
-				</label>
+				<view class="checkbox-group">
+					<checkbox-group @change="handleAgreementChange">
+						<label class="checkbox-label">
+							<checkbox :checked="agreed" color="#1890FF" />
+							<text class="agreement-text">我已阅读并同意</text>
+							<text class="agreement-link" @click="navigateToAgreement">《用户协议》</text>
+						</label>
+					</checkbox-group>
+				</view>
 			</view>
 			
-			<button class="register-btn" :disabled="!agreed" @click="handleRegister">注册</button>
+			<button class="register-btn" @click="handleRegister" :disabled="!agreed">注册</button>
 			
 			<view class="login-link">
 				<text class="login-text">已有账号？</text>
@@ -81,85 +74,67 @@
 </template>
 
 <script>
+	import authService from '@/utils/auth.js'
+	
 	export default {
 		data() {
 			return {
-				phone: '',
-				code: '',
+				username: '',
+				email: '',
 				password: '',
 				confirmPassword: '',
-				agreed: false,
-				countdown: 0,
-				canSendCode: true
+				nickname: '',
+				agreed: false
 			}
 		},
 		methods: {
-			sendCode() {
-				if (!this.phone) {
+			validateForm() {
+				if (!this.username) {
 					uni.showToast({
-						title: '请输入手机号',
+						title: '请输入用户名',
 						icon: 'none'
 					})
-					return
+					return false
 				}
 				
-				if (!/^1[3-9]\d{9}$/.test(this.phone)) {
+				if (!/^[a-zA-Z0-9_]{3,20}$/.test(this.username)) {
 					uni.showToast({
-						title: '请输入正确的手机号',
+						title: '用户名格式不正确（3-20位字母、数字或下划线）',
 						icon: 'none'
 					})
-					return
+					return false
 				}
 				
-				// 模拟发送验证码
-				this.countdown = 60
-				this.canSendCode = false
-				
-				const timer = setInterval(() => {
-					this.countdown--
-					if (this.countdown <= 0) {
-						this.canSendCode = true
-						clearInterval(timer)
-					}
-				}, 1000)
-				
-				uni.showToast({
-					title: '验证码已发送',
-					icon: 'success'
-				})
-			},
-			
-			handleRegister() {
-				if (!this.phone) {
+				if (!this.email) {
 					uni.showToast({
-						title: '请输入手机号',
+						title: '请输入邮箱地址',
 						icon: 'none'
 					})
-					return
+					return false
 				}
 				
-				if (!this.code) {
+				if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) {
 					uni.showToast({
-						title: '请输入验证码',
+						title: '邮箱格式不正确',
 						icon: 'none'
 					})
-					return
+					return false
 				}
 				
 				if (!this.password) {
 					uni.showToast({
-						title: '请设置密码',
+						title: '请输入密码',
 						icon: 'none'
 					})
-					return
+					return false
 				}
 				
 				if (this.password.length < 6) {
 					uni.showToast({
-						title: '密码长度不能少于6位',
+						title: '密码至少需要6位',
 						icon: 'none'
 					})
-					return
+					return false
 				}
 				
 				if (this.password !== this.confirmPassword) {
@@ -167,54 +142,115 @@
 						title: '两次输入的密码不一致',
 						icon: 'none'
 					})
+					return false
+				}
+				
+				if (!this.agreed) {
+					uni.showToast({
+						title: '请同意用户协议',
+						icon: 'none'
+					})
+					return false
+				}
+				
+				return true
+			},
+			
+			async handleRegister() {
+				if (!this.validateForm()) {
 					return
 				}
 				
-				// 模拟注册成功
 				uni.showLoading({
 					title: '注册中...'
 				})
 				
-				setTimeout(() => {
-					uni.hideLoading()
-					// 存储登录状态
-					uni.setStorageSync('isLogin', true)
-					uni.setStorageSync('userInfo', {
-						phone: this.phone,
-						name: '心屿用户'
-					})
-					
-					uni.showToast({
-						title: '注册成功',
-						icon: 'success'
-					})
-					
-					// 返回上一页或跳转到首页
-					uni.navigateBack()
-				}, 1500)
-			},
-			
-			showAgreement() {
-				uni.showModal({
-					title: '用户协议',
-					content: '心屿用户协议内容...',
-					showCancel: false,
-					confirmText: '知道了'
+			try {
+				const result = await authService.register({
+					username: this.username,
+					email: this.email,
+					password: this.password,
+					confirmPassword: this.confirmPassword,
+					nickname: this.nickname || this.username
 				})
+					
+					uni.hideLoading()
+					
+					if (result.success) {
+						uni.showToast({
+							title: '注册成功',
+							icon: 'success',
+							duration: 1000
+						})
+						
+						// 注册成功后，用户已经自动登录（authService.register 已经保存了会话）
+						// 跳转到"我的"页面
+						// 使用 reLaunch 确保能正确跳转到 tabBar 页面
+						setTimeout(() => {
+							uni.reLaunch({
+								url: '/pages/mine/mine',
+								success: () => {
+									console.log('导航成功：跳转到我的页面')
+								},
+								fail: (err) => {
+									console.error('导航失败:', err)
+									// 如果 reLaunch 失败，尝试使用 switchTab
+									uni.switchTab({
+										url: '/pages/mine/mine',
+										success: () => {
+											console.log('使用 switchTab 导航成功')
+										},
+										fail: (err2) => {
+											console.error('switchTab 也失败:', err2)
+											uni.showToast({
+												title: '跳转失败，请手动切换到"我的"页面',
+												icon: 'none',
+												duration: 2000
+											})
+										}
+									})
+								}
+							})
+						}, 1200)
+					} else {
+						uni.showToast({
+							title: result.message || '注册失败',
+							icon: 'none'
+						})
+					}
+				} catch (error) {
+					uni.hideLoading()
+					uni.showToast({
+						title: error.message || '注册失败，请重试',
+						icon: 'none'
+					})
+				}
 			},
 			
-			showPrivacy() {
-				uni.showModal({
-					title: '隐私政策',
-					content: '心屿隐私政策内容...',
-					showCancel: false,
-					confirmText: '知道了'
+			handleAgreementChange(e) {
+				this.agreed = e.detail.value.length > 0
+			},
+			
+			navigateToAgreement() {
+				uni.showToast({
+					title: '用户协议查看功能开发中',
+					icon: 'none'
 				})
 			},
 			
 			navigateToLogin() {
 				uni.navigateTo({
-					url: '/pages/login/login'
+					url: '/pages/login/login',
+					success: () => {
+						console.log('导航成功：跳转到登录页面')
+					},
+					fail: (err) => {
+						console.error('导航失败:', err)
+						uni.showToast({
+							title: '页面跳转失败，请重试',
+							icon: 'none'
+						})
+					}
 				})
 			}
 		}
@@ -230,8 +266,8 @@
 
 .header {
 	text-align: center;
-	margin-bottom: 80rpx;
-	margin-top: 60rpx;
+	margin-bottom: 60rpx;
+	margin-top: 40rpx;
 }
 
 .title {
@@ -287,53 +323,24 @@
 	background: #fff;
 }
 
-.code-input-group {
-	display: flex;
-	align-items: center;
-	gap: 20rpx;
-}
-
-.code-input {
-	flex: 1;
-	height: 80rpx;
-	border: 2rpx solid #E8E8E8;
-	border-radius: 20rpx;
-	padding: 0 30rpx;
-	font-size: 28rpx;
-	background: #F8F8F8;
-	box-sizing: border-box;
-}
-
-.send-code-btn {
-	width: 200rpx;
-	height: 80rpx;
-	background: #1890FF;
-	color: white;
-	border-radius: 20rpx;
-	font-size: 24rpx;
-	border: none;
-	white-space: nowrap;
-}
-
-.send-code-btn:disabled {
-	background: #ccc;
-}
-
 .agreement {
 	margin-bottom: 60rpx;
 }
 
-.agreement-checkbox {
+.checkbox-group {
 	display: flex;
-	align-items: flex-start;
-	font-size: 24rpx;
-	color: #666;
-	line-height: 1.5;
+	align-items: center;
+	justify-content: center;
+}
+
+.checkbox-label {
+	display: flex;
+	align-items: center;
+	font-size: 26rpx;
 }
 
 .agreement-text {
-	flex: 1;
-	margin-left: 10rpx;
+	color: #666;
 }
 
 .agreement-link {
@@ -353,6 +360,7 @@
 
 .register-btn:disabled {
 	background: #ccc;
+	color: #999;
 }
 
 .login-link {

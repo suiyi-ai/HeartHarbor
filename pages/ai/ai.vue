@@ -7,7 +7,7 @@
 				<text class="virtual-text">虚拟人</text>
 			</view>
 			<view class="current-settings">
-				<text class="settings-text">当前：{{currentRole.name}} · {{currentStyle.name}}</text>
+				<text class="settings-text">当前：{{currentRole.name}}</text>
 			</view>
 			<view class="conversation-actions">
 				<view class="new-conversation-btn" @click="createNewConversation">
@@ -35,18 +35,7 @@
 			</scroll-view>
 		</view>
 		
-		<!-- 风格设置�?-->
-		<view class="style-section">
-			<text class="section-title">回复风格</text>
-			<view class="style-tags">
-				<view class="style-tag" v-for="style in styles" :key="style.id"
-					:class="{active: currentStyle.id === style.id}"
-					@click="selectStyle(style.id)">
-					<text class="style-icon">{{style.icon}}</text>
-					<text class="style-name">{{style.name}}</text>
-				</view>
-			</view>
-		</view>
+
 		
 		<!-- 聊天主界�?-->
 		<view class="chat-container">
@@ -91,12 +80,12 @@
 					<text class="modal-close" @click="closeVirtualHumanModal">×</text>
 				</view>
 				<view class="modal-body">
-					<text class="modal-text">虚拟人功能正在开发中，即将推出！</text>
-					<text class="modal-text">未来您将可以与虚拟形象进行更生动的对话交流。</text>
+					<text class="modal-text">虚拟人功能已就绪！</text>
+					<text class="modal-text">现在您可以与虚拟形象进行生动的对话交流。</text>
 					<view class="feature-preview">
-						<text class="feature-item">🎯 个性化虚拟形象</text>
-						<text class="feature-item">💬 表情丰富的对话</text>
-						<text class="feature-item">🎨 自定义外观</text>
+						<text class="feature-item">🎯 讯飞智能虚拟人</text>
+						<text class="feature-item">💬 自然语音交互</text>
+						<text class="feature-item">🎨 叶子语音陪伴</text>
 					</view>
 				</view>
 			</view>
@@ -122,8 +111,7 @@
 						<text class="conversation-title">{{conversation.title}}</text>
 						<text class="conversation-meta">
 							{{formatDate(conversation.updated_at)}} · 
-							{{getRoleName(conversation.role_id)}} · 
-							{{getStyleName(conversation.style_id)}}
+							{{getRoleName(conversation.role_id)}}
 						</text>
 					</view>
 					<view class="conversation-actions">
@@ -177,6 +165,7 @@
 				scrollTop: 0,
 				showVirtualHumanModal: false,
 				isLoading: false,
+				isLogin: false, // 登录状态
 				
 				// 对话管理相关
 				conversations: [],
@@ -203,34 +192,99 @@
 					{ id: 'advisor', name: '专业顾问', icon: '🎓', description: '专业分析，理性建议' }
 				],
 				
-				// 风格数据
-				styles: [
-					{ id: 'friendly', name: '亲切友好', icon: '😊' },
-					{ id: 'professional', name: '专业严谨', icon: '📊' },
-					{ id: 'encouraging', name: '鼓励支持', icon: '🌟' },
-					{ id: 'casual', name: '轻松随意', icon: '😄' }
-				],
-				
-				currentRole: { id: 'companion', name: '心灵伙伴', icon: '💖', description: '温暖陪伴，情感支持' },
-				currentStyle: { id: 'friendly', name: '亲切友好', icon: '😊' }
+			currentRole: { id: 'companion', name: '心灵伙伴', icon: '💖', description: '温暖陪伴，情感支持' }
 			}
 		},
 		
 		mounted() {
+			// 检查登录状态
+			this.checkLoginStatus()
 			// 从本地存储加载用户偏好设置
 			this.loadUserPreferences()
-			// 初始化对话系统
-			this.initConversationSystem()
+			// 如果已登录，初始化对话系统
+			if (this.isLogin) {
+				this.initConversationSystem()
+			}
+		},
+		
+		// 页面显示时重新加载对话（用户可能在其他页面登录/退出）
+		onShow() {
+			// 重新检查登录状态
+			this.checkLoginStatus()
+			// 如果已登录，重新初始化对话系统，确保使用最新的用户ID
+			if (this.isLogin) {
+				this.initConversationSystem()
+			} else {
+				// 未登录时清空对话数据
+				this.conversations = []
+				this.currentConversationId = null
+				this.messages = [{
+					role: 'assistant',
+					content: '你好！我是你的AI心理伙伴，随时准备倾听你的心声。今天过得怎么样？'
+				}]
+			}
 		},
 		
 		methods: {
+			// 检查登录状态
+			checkLoginStatus() {
+				try {
+					const currentUserStr = uni.getStorageSync('current_user')
+					const authToken = uni.getStorageSync('auth_token')
+					
+					if (currentUserStr && authToken) {
+						this.isLogin = true
+					} else {
+						// 兼容旧版本的登录状态检查
+						const isLogin = uni.getStorageSync('isLogin')
+						this.isLogin = isLogin || false
+					}
+				} catch (error) {
+					console.error('检查登录状态失败:', error)
+					this.isLogin = false
+				}
+			},
+			
+			// 检查登录状态并提示
+			checkLoginAndPrompt() {
+				if (!this.isLogin) {
+					uni.showModal({
+						title: '需要登录',
+						content: '使用AI伙伴功能需要先登录，是否前往登录？',
+						success: (res) => {
+							if (res.confirm) {
+								uni.navigateTo({
+									url: '/pages/login/login',
+									success: () => {
+										console.log('导航成功：跳转到登录页面')
+									},
+									fail: (err) => {
+										console.error('导航失败:', err)
+										uni.showToast({
+											title: '页面跳转失败，请重试',
+											icon: 'none'
+										})
+									}
+								})
+							}
+						}
+					})
+					return false
+				}
+				return true
+			},
+			
 			// 初始化对话系统
 			async initConversationSystem() {
+				// 如果未登录，不初始化
+				if (!this.isLogin) {
+					return
+				}
 				try {
 					// 检查Supabase连接
 					await conversationService.checkSupabaseConnection()
 					
-					// 加载对话列表
+					// 重新加载对话列表（确保使用最新的用户ID）
 					await this.loadConversations()
 					
 					// 如果没有当前对话，创建新对话
@@ -271,14 +325,54 @@
 				}
 			},
 			
+			// 导航到登录页面
+			navigateToLogin() {
+				uni.navigateTo({
+					url: '/pages/login/login',
+					success: () => {
+						console.log('导航成功：跳转到登录页面')
+					},
+					fail: (err) => {
+						console.error('导航失败:', err)
+						uni.showToast({
+							title: '页面跳转失败，请重试',
+							icon: 'none'
+						})
+					}
+				})
+			},
+			
+			// 导航到注册页面
+			navigateToRegister() {
+				uni.navigateTo({
+					url: '/pages/register/register',
+					success: () => {
+						console.log('导航成功：跳转到注册页面')
+					},
+					fail: (err) => {
+						console.error('导航失败:', err)
+						uni.showToast({
+							title: '页面跳转失败，请重试',
+							icon: 'none'
+						})
+					}
+				})
+			},
+			
 			// 创建新对话
 			async createNewConversation() {
+				if (!this.checkLoginAndPrompt()) {
+					return
+				}
 				try {
 					const title = `${this.currentRole.name}的对话`
+					// 提供默认的 styleId，如果数据库需要非空值
+					// 可以根据角色类型选择不同的样式，或者使用默认值
+					const styleId = this.currentRole.style_id || 'friendly' // 默认使用友好的样式
 					const conversation = await conversationService.createConversation(
 						title,
 						this.currentRole.id,
-						this.currentStyle.id
+						styleId
 					)
 					
 					this.currentConversationId = conversation.id
@@ -314,18 +408,28 @@
 				try {
 					this.currentConversationId = conversationId
 					
-					// 从数据库加载消息
+					// 从数据库加载消息（确保只加载当前用户的消息）
 					const messages = await conversationService.getConversationMessages(conversationId)
-					this.messages = messages
+					// 将数据库消息格式转换为界面显示格式
+					if (messages && messages.length > 0) {
+						this.messages = messages.map(msg => ({
+							role: msg.role,
+							content: msg.content
+						}))
+					} else {
+						// 如果没有消息，显示欢迎消息
+						this.messages = [{
+							role: 'assistant',
+							content: '你好！我是你的AI心理伙伴，随时准备倾听你的心声。今天过得怎么样？'
+						}]
+					}
 					
-					// 更新当前角色和风�?
+					// 更新当前角色
 					const conversationData = this.conversations.find(c => c.id === conversationId)
 					if (conversationData) {
 						const role = this.roles.find(r => r.id === conversationData.role_id)
-						const style = this.styles.find(s => s.id === conversationData.style_id)
 						
 						if (role) this.currentRole = role
-						if (style) this.currentStyle = style
 					}
 					
 					// 关闭历史面板
@@ -451,6 +555,9 @@
 			
 			// 切换历史面板
 			toggleHistoryPanel() {
+				if (!this.checkLoginAndPrompt()) {
+					return
+				}
 				this.showHistoryPanel = !this.showHistoryPanel
 				if (this.showHistoryPanel) {
 					this.loadConversations()
@@ -477,17 +584,12 @@
 				return role ? role.name : '未知角色'
 			},
 			
-			// 获取风格名称
-			getStyleName(styleId) {
-				const style = this.styles.find(s => s.id === styleId)
-				return style ? style.name : '未知风格'
-			},
+
 			
 			// 加载用户偏好设置
 			loadUserPreferences() {
 				try {
 					const savedRole = uni.getStorageSync('ai_role')
-					const savedStyle = uni.getStorageSync('ai_style')
 					
 					// 确保currentRole始终有值
 					if (savedRole) {
@@ -496,24 +598,18 @@
 					} else {
 						this.currentRole = this.roles[0] // 使用默认角色
 					}
-					
-					// 确保currentStyle始终有值
-					if (savedStyle) {
-						const style = this.styles.find(s => s.id === savedStyle)
-						this.currentStyle = style || this.styles[0] // 如果找不到，使用默认风格
-					} else {
-						this.currentStyle = this.styles[0] // 使用默认风格
-					}
 				} catch (e) {
 					console.log('加载用户偏好失败', e)
 					// 设置默认值
 					this.currentRole = this.roles[0]
-					this.currentStyle = this.styles[0]
 				}
 			},
 			
 			// 选择角色
 			selectRole(roleId) {
+				if (!this.checkLoginAndPrompt()) {
+					return
+				}
 				const role = this.roles.find(r => r.id === roleId)
 				if (role) {
 					this.currentRole = role
@@ -524,14 +620,7 @@
 				}
 			},
 			
-			// 选择风格
-			selectStyle(styleId) {
-				const style = this.styles.find(s => s.id === styleId)
-				if (style) {
-					this.currentStyle = style
-					uni.setStorageSync('ai_style', styleId)
-				}
-			},
+
 			
 			// 角色切换问候语
 			addRoleGreeting() {
@@ -550,12 +639,25 @@
 				})
 			},
 			
-		// 跳转到虚拟人页面
-		showVirtualHumanPreview() {
-			uni.navigateTo({
-				url: '/pages/virtual-human/virtual-human'
-			})
-		},
+	// 跳转到虚拟人页面
+	showVirtualHumanPreview() {
+		if (!this.checkLoginAndPrompt()) {
+			return
+		}
+		uni.navigateTo({
+			url: '/pages/virtual-human/xf-virtual-human',
+			success: () => {
+				console.log('导航成功：跳转到虚拟人页面')
+			},
+			fail: (err) => {
+				console.error('导航失败:', err)
+				uni.showToast({
+					title: '页面跳转失败，请重试',
+					icon: 'none'
+				})
+			}
+		})
+	},
 		
 		// 关闭虚拟人功能预�?
 		closeVirtualHumanModal() {
@@ -563,6 +665,9 @@
 		},
 			
 			async sendMessage() {
+				if (!this.checkLoginAndPrompt()) {
+					return
+				}
 				if (!this.inputText.trim()) return
 				
 				// 如果没有当前对话，先创建
@@ -689,11 +794,10 @@
 				return new Promise((resolve, reject) => {
 					// 构建结构化输入数据，使用Dify变量系统传递角色信息
 					const inputs = {
-						query: userMessage,
-						role: this.currentRole.name,
-						role_description: this.currentRole.description,
-						style: this.currentStyle.name,
-						system_prompt: `你是一个${this.currentRole.name}，请以${this.currentStyle.name}的风格回复用户。你的角色描述是：${this.currentRole.description}`
+							query: userMessage,
+							role: this.currentRole.name,
+							role_description: this.currentRole.description,
+							system_prompt: `你是一个${this.currentRole.name}。你的角色描述是：${this.currentRole.description}`
 					}
 					
 					// 添加超时机制
@@ -799,53 +903,21 @@
 				})
 			},
 			
-			// 根据角色和风格生成AI回复
+			// 根据角色生成AI回复
 			generateAIResponse(userMessage) {
-				// 基础回复模板
-				const baseResponses = {
+				// 根据角色生成回复
+				const roleResponses = {
 					companion: {
-						friendly: {
-							pressure: '亲爱的，感受到你有些压力呢～这很正常哦！可以试试深呼吸放松一下，或者和我聊聊具体是什么让你感到压力？😊',
-							happy: '真为你感到高兴！保持积极的心态很重要呢～愿意和我分享更多让你开心的事情吗？💖',
-							sad: '听到你难过我也感到心疼呢。情绪波动是正常的，重要的是给自己时间和空间去感受和处理这些情绪。抱抱你～'
-						},
-						professional: {
-							pressure: '我注意到您提到了一些压力感受。压力是常见的心理反应，建议您可以尝试一些放松技巧，比如深呼吸或渐进式肌肉放松。',
-							happy: '为您感到高兴。积极情绪对心理健康有重要影响，建议继续保持这种积极状态。',
-							sad: '理解您的情绪感受。情绪波动是正常的心理现象，建议给自己适当的情绪调节空间。'
-						},
-						encouraging: {
-							pressure: '感受到你的压力，但请相信你有能力应对！每一次挑战都是成长的机会，加油！🌟',
-							happy: '真棒！继续保持这种积极的状态，你的快乐也会感染身边的人～',
-							sad: '难过的时候请记得，你并不孤单。每一次情绪波动都是自我了解的机会，相信你会变得更强大～'
-						},
-						casual: {
-							pressure: '哈哈，压力山大啊？放松点，生活就是这样，有起有落～聊聊看具体啥情况？😄',
-							happy: '哇，听起来不错嘛！开心的事情要多多分享，让快乐加倍！',
-							sad: '哎，有时候确实会有点down呢。不过没关系，说出来就好多了，我在这儿听着呢～'
-						}
+						pressure: '亲爱的，感受到你有些压力呢～这很正常哦！可以试试深呼吸放松一下，或者和我聊聊具体是什么让你感到压力？😊',
+						happy: '真为你感到高兴！保持积极的心态很重要呢～愿意和我分享更多让你开心的事情吗？💖',
+						sad: '听到你难过我也感到心疼呢。情绪波动是正常的，重要的是给自己时间和空间去感受和处理这些情绪。抱抱你～',
+						default: '谢谢你的分享！我在这里倾听，如果你愿意，可以告诉我更多关于你的感受和想法。'
 					},
 					advisor: {
-						friendly: {
-							pressure: '您好！从您的描述中我感受到一些压力。作为专业顾问，我建议您可以尝试认知行为疗法中的一些技巧来管理压力。',
-							happy: '很高兴听到您的积极体验！积极情绪对心理健康有重要促进作用。',
-							sad: '理解您的情绪困扰。从专业角度，建议您关注情绪调节策略的应用。'
-						},
-						professional: {
-							pressure: '根据您的描述，建议采用压力管理三步骤：识别压力源、评估压力水平、实施应对策略。',
-							happy: '积极情绪体验对心理健康具有正向影响，建议继续保持并记录积极事件。',
-							sad: '情绪困扰需要系统评估，建议采用情绪日记进行追踪记录。'
-						},
-						encouraging: {
-							pressure: '您展现出了很好的自我觉察能力！压力管理是一个学习过程，相信您能逐步掌握有效策略。',
-							happy: '您的积极体验展示了良好的心理适应能力，这是心理健康的重要标志。',
-							sad: '面对情绪困扰需要勇气，您已经迈出了重要一步。持续关注情绪健康会有积极回报。'
-						},
-						casual: {
-							pressure: '压力这事儿，说大不大说小不小～关键是找到适合自己的调节方式，咱们一起分析分析？',
-							happy: '不错嘛！积极情绪就像心理维生素，多多益善～',
-							sad: '情绪有起伏很正常，重要的是学会和它们和平相处。有啥具体想聊的？'
-						}
+						pressure: '您好！从您的描述中我感受到一些压力。作为专业顾问，我建议您可以尝试认知行为疗法中的一些技巧来管理压力。',
+						happy: '很高兴听到您的积极体验！积极情绪对心理健康有重要促进作用。',
+						sad: '理解您的情绪困扰。从专业角度，建议您关注情绪调节策略的应用。',
+						default: '感谢您的信任。作为专业顾问，我将为您提供理性的分析和建议。'
 					}
 				}
 				
@@ -859,31 +931,12 @@
 					responseType = 'sad'
 				}
 				
-				// 获取对应的回复
-				const roleResponses = baseResponses[this.currentRole.id]
-				const styleResponses = roleResponses[this.currentStyle.id]
-				
-				if (styleResponses && styleResponses[responseType]) {
-					return styleResponses[responseType]
+				const roleResponse = roleResponses[this.currentRole.id]
+				if (roleResponse && roleResponse[responseType]) {
+					return roleResponse[responseType]
 				}
 				
-				// 默认回复
-				const defaultResponses = {
-					companion: {
-						friendly: '谢谢你的分享！我在这里倾听，如果你愿意，可以告诉我更多关于你的感受和想法。',
-						professional: '感谢您的分享。我将基于专业角度为您提供分析建议。',
-						encouraging: '感谢分享！每一次交流都是成长的机会，继续加油！🌟',
-						casual: '哈哈，聊得不错嘛！还有什么想说的尽管来～😄'
-					},
-					advisor: {
-						friendly: '感谢您的信任。作为专业顾问，我将为您提供理性的分析和建议。',
-						professional: '收到您的信息。建议进一步详细描述具体情况以便精准分析。',
-						encouraging: '感谢分享！专业咨询需要详细沟通，相信我们能找到有效解决方案。',
-						casual: '好的，信息收到。咱们继续深入聊聊具体情况？'
-					}
-				}
-				
-				return defaultResponses[this.currentRole.id][this.currentStyle.id]
+				return roleResponse.default
 			}
 		}
 	}
@@ -1135,80 +1188,7 @@
 	line-height: 1.4;
 }
 
-/* 风格设置区样�?- 优化�?*/
-.style-section {
-	margin-bottom: 35rpx;
-	background: rgba(255, 255, 255, 0.95);
-	border-radius: 25rpx;
-	padding: 30rpx;
-	border: 2rpx solid #E6F3FF;
-	box-shadow: 0 8rpx 30rpx rgba(24, 144, 255, 0.1);
-}
 
-.style-tags {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 20rpx;
-	justify-content: center;
-}
-
-.style-tag {
-	display: flex;
-	align-items: center;
-	padding: 25rpx 30rpx;
-	background: #F8F9FA;
-	border-radius: 20rpx;
-	border: 2rpx solid transparent;
-	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	min-width: 180rpx;
-	justify-content: center;
-	cursor: pointer;
-	position: relative;
-	overflow: hidden;
-}
-
-.style-tag::before {
-	content: '';
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	height: 3rpx;
-	background: linear-gradient(90deg, #1890FF, #40A9FF);
-	transform: scaleX(0);
-	transition: transform 0.3s ease;
-}
-
-.style-tag.active {
-	background: linear-gradient(135deg, #E6F3FF 0%, #D6EBFF 100%);
-	border-color: #1890FF;
-	transform: translateY(-5rpx);
-	box-shadow: 0 10rpx 30rpx rgba(24, 144, 255, 0.2);
-}
-
-.style-tag.active::before {
-	transform: scaleX(1);
-}
-
-.style-tag:active {
-	transform: scale(0.98);
-}
-
-.style-icon {
-	font-size: 36rpx;
-	margin-right: 15rpx;
-	transition: transform 0.3s ease;
-}
-
-.style-tag.active .style-icon {
-	transform: scale(1.1);
-}
-
-.style-name {
-	font-size: 28rpx;
-	color: #333;
-	font-weight: 600;
-}
 
 /* 聊天容器样式 - 优化�?*/
 .chat-container {
@@ -1808,7 +1788,7 @@
 		order: 2;
 	}
 	
-	.role-section, .style-section {
+	.role-section {
 		padding: 25rpx;
 		margin-bottom: 25rpx;
 	}
@@ -1825,10 +1805,7 @@
 		padding: 25rpx 30rpx;
 	}
 	
-	.style-tag {
-		min-width: 150rpx;
-		padding: 20rpx 25rpx;
-	}
+
 	
 	.chat-container {
 		padding: 25rpx;
@@ -1920,6 +1897,66 @@
 		height: 70rpx;
 		font-size: 26rpx;
 	}
+}
+
+/* 未登录提示样式 */
+.login-prompt {
+	background: #fff;
+	border-radius: 20rpx;
+	padding: 80rpx 40rpx;
+	margin: 40rpx 0;
+	box-shadow: 0 4rpx 20rpx rgba(24, 144, 255, 0.1);
+	text-align: center;
+}
+
+.prompt-content {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.prompt-icon {
+	font-size: 100rpx;
+	margin-bottom: 30rpx;
+}
+
+.prompt-title {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 20rpx;
+}
+
+.prompt-desc {
+	font-size: 28rpx;
+	color: #666;
+	margin-bottom: 50rpx;
+	line-height: 1.6;
+}
+
+.login-buttons {
+	display: flex;
+	gap: 30rpx;
+	width: 100%;
+}
+
+.login-buttons button {
+	flex: 1;
+	height: 80rpx;
+	border-radius: 40rpx;
+	font-size: 30rpx;
+	border: none;
+}
+
+.login-buttons .login-btn {
+	background: linear-gradient(135deg, #1890FF 0%, #40A9FF 100%);
+	color: white;
+}
+
+.login-buttons .register-btn {
+	background: #fff;
+	color: #1890FF;
+	border: 2rpx solid #1890FF;
 }
 </style>
 

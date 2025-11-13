@@ -29,20 +29,6 @@ function convertLegacyUserId(legacyId) {
     return v.toString(16);
   });
 }
-function getUserId() {
-  let userId = common_vendor.index.getStorageSync("user_id");
-  if (!userId) {
-    userId = generateUUID();
-    common_vendor.index.setStorageSync("user_id", userId);
-    common_vendor.index.__f__("log", "at utils/supabase.js:49", "生成新用户ID（UUID格式）:", userId);
-  } else if (!isValidUUID(userId)) {
-    const newUserId = convertLegacyUserId(userId);
-    common_vendor.index.__f__("log", "at utils/supabase.js:53", "转换旧用户ID格式:", userId, "->", newUserId);
-    userId = newUserId;
-    common_vendor.index.setStorageSync("user_id", userId);
-  }
-  return userId;
-}
 function buildSupabaseQuery(params) {
   const parts = [];
   Object.keys(params).forEach((key) => {
@@ -108,22 +94,49 @@ async function migrateUserData() {
 }
 class SupabaseService {
   constructor() {
-    this.userId = getUserId();
     this.isConnected = false;
     this.initConnection();
+  }
+  // 获取当前用户ID（支持动态获取，优先使用登录用户ID）
+  getUserId() {
+    try {
+      const currentUserStr = common_vendor.index.getStorageSync("current_user");
+      if (currentUserStr) {
+        const currentUser = JSON.parse(currentUserStr);
+        if (currentUser && currentUser.id) {
+          common_vendor.index.__f__("log", "at utils/supabase.js:139", "使用登录用户ID:", currentUser.id);
+          return currentUser.id;
+        }
+      }
+    } catch (error) {
+      common_vendor.index.__f__("warn", "at utils/supabase.js:147", "获取登录用户信息失败:", error);
+    }
+    let userId = common_vendor.index.getStorageSync("user_id");
+    if (!userId) {
+      userId = generateUUID();
+      common_vendor.index.setStorageSync("user_id", userId);
+      common_vendor.index.__f__("log", "at utils/supabase.js:155", "生成新匿名用户ID（UUID格式）:", userId);
+    } else if (!isValidUUID(userId)) {
+      const newUserId = convertLegacyUserId(userId);
+      common_vendor.index.__f__("log", "at utils/supabase.js:159", "转换旧用户ID格式:", userId, "->", newUserId);
+      userId = newUserId;
+      common_vendor.index.setStorageSync("user_id", userId);
+    }
+    return userId;
   }
   // 初始化连接（修复版本）
   async initConnection() {
     try {
       await migrateUserData();
-      if (!isValidUUID(this.userId)) {
-        common_vendor.index.__f__("warn", "at utils/supabase.js:165", "用户ID格式无效，重新生成:", this.userId);
-        this.userId = generateUUID();
-        common_vendor.index.setStorageSync("user_id", this.userId);
+      const userId = this.getUserId();
+      if (!isValidUUID(userId)) {
+        common_vendor.index.__f__("warn", "at utils/supabase.js:171", "用户ID格式无效，重新生成:", userId);
+        const newUserId = generateUUID();
+        common_vendor.index.setStorageSync("user_id", newUserId);
       }
       const testResult = await this.testConnection();
       this.isConnected = true;
-      common_vendor.index.__f__("log", "at utils/supabase.js:172", "Supabase MCP连接成功，用户ID:", this.userId);
+      common_vendor.index.__f__("log", "at utils/supabase.js:178", "Supabase MCP连接成功，用户ID:", this.getUserId());
       return testResult;
     } catch (error) {
       common_vendor.index.__f__("warn", "at utils/supabase.js:174", "Supabase MCP连接失败，将使用降级方案:", error);
@@ -218,16 +231,19 @@ class SupabaseService {
   // 创建新对话（修复版本）
   async createConversation(title, roleId, styleId) {
     try {
+      const userId = this.getUserId();
+      const finalStyleId = styleId || "friendly";
       const data = {
-        user_id: this.userId,
+        user_id: userId,
         title: title || "新对话",
         role_id: roleId,
-        style_id: styleId,
+        style_id: finalStyleId,
+        // 确保不为 null
         is_active: true,
         created_at: (/* @__PURE__ */ new Date()).toISOString(),
         updated_at: (/* @__PURE__ */ new Date()).toISOString()
       };
-      common_vendor.index.__f__("log", "at utils/supabase.js:274", "MCP: 创建对话，数据:", data);
+      common_vendor.index.__f__("log", "at utils/supabase.js:274", "MCP: 创建对话，用户ID:", userId, "数据:", data);
       const result = await this.callApi("conversations", {
         method: "POST",
         header: {
@@ -246,11 +262,12 @@ class SupabaseService {
   // 获取用户的所有对话（修复HTTP 400错误）
   async getUserConversations() {
     try {
-      common_vendor.index.__f__("log", "at utils/supabase.js:296", "MCP: 获取用户对话，用户ID:", this.userId);
+      const userId = this.getUserId();
+      common_vendor.index.__f__("log", "at utils/supabase.js:296", "MCP: 获取用户对话，用户ID:", userId);
       const result = await this.callApi("conversations", {
         method: "GET",
         queryParams: {
-          user_id: `eq.${this.userId}`,
+          user_id: `eq.${userId}`,
           is_active: "eq.true",
           select: "*"
         }
@@ -262,28 +279,44 @@ class SupabaseService {
       return [];
     }
   }
-  // 获取对话的详细信息（修复版本）
-  async getConversation(conversationId) {
+  // 获取对话的详细信息（修复版本，支持用户验证）
+  async getConversation(conversationId, verifyUser = false) {
     try {
-      common_vendor.index.__f__("log", "at utils/supabase.js:319", "MCP: 获取对话详情，对话ID:", conversationId);
+      const userId = this.getUserId();
+      common_vendor.index.__f__("log", "at utils/supabase.js:319", "MCP: 获取对话详情，对话ID:", conversationId, "用户ID:", userId);
+      const queryParams = {
+        id: `eq.${conversationId}`,
+        select: "*"
+      };
+      if (verifyUser) {
+        queryParams.user_id = `eq.${userId}`;
+      }
       const result = await this.callApi("conversations", {
         method: "GET",
-        queryParams: {
-          id: `eq.${conversationId}`,
-          select: "*"
-        }
+        queryParams
       });
-      common_vendor.index.__f__("log", "at utils/supabase.js:329", "MCP: 获取对话详情成功:", result ? result[0] : null);
-      return result ? result[0] : null;
+      const conversation = result ? result[0] : null;
+      if (conversation && verifyUser && conversation.user_id !== userId) {
+        common_vendor.index.__f__("warn", "at utils/supabase.js:340", "MCP: 对话不属于当前用户，对话ID:", conversationId);
+        return null;
+      }
+      common_vendor.index.__f__("log", "at utils/supabase.js:345", "MCP: 获取对话详情成功:", conversation);
+      return conversation;
     } catch (error) {
-      common_vendor.index.__f__("error", "at utils/supabase.js:332", "MCP: 获取对话详情失败:", error);
+      common_vendor.index.__f__("error", "at utils/supabase.js:348", "MCP: 获取对话详情失败:", error);
       return null;
     }
   }
   // 获取对话的所有消息（修复版本）
   async getConversationMessages(conversationId) {
     try {
-      common_vendor.index.__f__("log", "at utils/supabase.js:340", "MCP: 获取对话消息，对话ID:", conversationId);
+      const userId = this.getUserId();
+      const conversation = await this.getConversation(conversationId, true);
+      if (!conversation) {
+        common_vendor.index.__f__("warn", "at utils/supabase.js:361", "MCP: 对话不存在或不属于当前用户，对话ID:", conversationId);
+        return [];
+      }
+      common_vendor.index.__f__("log", "at utils/supabase.js:365", "MCP: 获取对话消息，对话ID:", conversationId, "用户ID:", userId);
       const result = await this.callApi("messages", {
         method: "GET",
         queryParams: {
@@ -292,23 +325,29 @@ class SupabaseService {
           select: "*"
         }
       });
-      common_vendor.index.__f__("log", "at utils/supabase.js:351", "MCP: 获取消息成功，数量:", result ? result.length : 0);
+      common_vendor.index.__f__("log", "at utils/supabase.js:376", "MCP: 获取消息成功，数量:", result ? result.length : 0);
       return result || [];
     } catch (error) {
-      common_vendor.index.__f__("error", "at utils/supabase.js:354", "MCP: 获取对话消息失败:", error);
+      common_vendor.index.__f__("error", "at utils/supabase.js:379", "MCP: 获取对话消息失败:", error);
       return [];
     }
   }
   // 保存消息（修复版本）
   async saveMessage(conversationId, role, content) {
     try {
+      const userId = this.getUserId();
+      const conversation = await this.getConversation(conversationId, true);
+      if (!conversation) {
+        common_vendor.index.__f__("warn", "at utils/supabase.js:391", "MCP: 对话不存在或不属于当前用户，无法保存消息，对话ID:", conversationId);
+        throw new Error("对话不存在或不属于当前用户");
+      }
       const data = {
         conversation_id: conversationId,
         role,
         content,
         created_at: (/* @__PURE__ */ new Date()).toISOString()
       };
-      common_vendor.index.__f__("log", "at utils/supabase.js:369", "MCP: 保存消息，数据:", data);
+      common_vendor.index.__f__("log", "at utils/supabase.js:400", "MCP: 保存消息，用户ID:", userId, "数据:", data);
       const result = await this.callApi("messages", {
         method: "POST",
         header: {
@@ -317,54 +356,70 @@ class SupabaseService {
         },
         data
       });
-      common_vendor.index.__f__("log", "at utils/supabase.js:380", "MCP: 保存消息成功:", result);
+      common_vendor.index.__f__("log", "at utils/supabase.js:411", "MCP: 保存消息成功:", result);
       return result ? result[0] : null;
     } catch (error) {
-      common_vendor.index.__f__("error", "at utils/supabase.js:383", "MCP: 保存消息失败:", error);
+      common_vendor.index.__f__("error", "at utils/supabase.js:414", "MCP: 保存消息失败:", error);
       throw error;
     }
   }
   // 更新对话标题（修复版本）
   async updateConversationTitle(conversationId, title) {
     try {
+      const userId = this.getUserId();
+      const conversation = await this.getConversation(conversationId, true);
+      if (!conversation) {
+        common_vendor.index.__f__("warn", "at utils/supabase.js:424", "MCP: 对话不存在或不属于当前用户，无法更新标题，对话ID:", conversationId);
+        throw new Error("对话不存在或不属于当前用户");
+      }
       const data = {
         title,
         updated_at: (/* @__PURE__ */ new Date()).toISOString()
       };
-      common_vendor.index.__f__("log", "at utils/supabase.js:396", "MCP: 更新对话标题，对话ID:", conversationId, "标题:", title);
+      common_vendor.index.__f__("log", "at utils/supabase.js:432", "MCP: 更新对话标题，用户ID:", userId, "对话ID:", conversationId, "标题:", title);
       const result = await this.callApi("conversations", {
         method: "PATCH",
         queryParams: {
-          id: `eq.${conversationId}`
+          id: `eq.${conversationId}`,
+          user_id: `eq.${userId}`
+          // 确保只更新当前用户的对话
         },
         data
       });
-      common_vendor.index.__f__("log", "at utils/supabase.js:406", "MCP: 更新对话标题成功:", result);
+      common_vendor.index.__f__("log", "at utils/supabase.js:442", "MCP: 更新对话标题成功:", result);
       return result ? result[0] : null;
     } catch (error) {
-      common_vendor.index.__f__("error", "at utils/supabase.js:409", "MCP: 更新对话标题失败:", error);
+      common_vendor.index.__f__("error", "at utils/supabase.js:445", "MCP: 更新对话标题失败:", error);
       throw error;
     }
   }
   // 删除对话（软删除，修复版本）
   async deleteConversation(conversationId) {
     try {
+      const userId = this.getUserId();
+      const conversation = await this.getConversation(conversationId, true);
+      if (!conversation) {
+        common_vendor.index.__f__("warn", "at utils/supabase.js:456", "MCP: 对话不存在或不属于当前用户，无法删除，对话ID:", conversationId);
+        throw new Error("对话不存在或不属于当前用户");
+      }
       const data = {
         is_active: false,
         updated_at: (/* @__PURE__ */ new Date()).toISOString()
       };
-      common_vendor.index.__f__("log", "at utils/supabase.js:422", "MCP: 删除对话，对话ID:", conversationId);
+      common_vendor.index.__f__("log", "at utils/supabase.js:464", "MCP: 删除对话，用户ID:", userId, "对话ID:", conversationId);
       const result = await this.callApi("conversations", {
         method: "PATCH",
         queryParams: {
-          id: `eq.${conversationId}`
+          id: `eq.${conversationId}`,
+          user_id: `eq.${userId}`
+          // 确保只删除当前用户的对话
         },
         data
       });
-      common_vendor.index.__f__("log", "at utils/supabase.js:432", "MCP: 删除对话成功:", result);
+      common_vendor.index.__f__("log", "at utils/supabase.js:474", "MCP: 删除对话成功:", result);
       return result ? result[0] : null;
     } catch (error) {
-      common_vendor.index.__f__("error", "at utils/supabase.js:435", "MCP: 删除对话失败:", error);
+      common_vendor.index.__f__("error", "at utils/supabase.js:477", "MCP: 删除对话失败:", error);
       throw error;
     }
   }
@@ -386,6 +441,812 @@ class SupabaseService {
       return { total: 0, recent: 0 };
     }
   }
+  // ========== 树洞功能相关方法 ==========
+  // 创建树洞帖子
+  async createTreeholePost(content, emotion = "neutral", isAnonymous = true) {
+    try {
+      const userId = this.getUserId();
+      const data = {
+        user_id: userId,
+        content,
+        emotion,
+        is_anonymous: isAnonymous,
+        like_count: 0,
+        comment_count: 0,
+        is_active: true,
+        created_at: (/* @__PURE__ */ new Date()).toISOString(),
+        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      common_vendor.index.__f__("log", "at utils/supabase.js:525", "MCP: 创建树洞帖子");
+      const result = await this.callApi("treehole_posts", {
+        method: "POST",
+        header: {
+          "Content-Type": "application/json",
+          "Prefer": "return=representation"
+        },
+        data
+      });
+      return result ? result[0] : null;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:540", "MCP: 创建树洞帖子失败:", error);
+      if (error.message && error.message.includes("does not exist")) {
+        return null;
+      }
+      throw error;
+    }
+  }
+  // 获取树洞帖子列表（分页）
+  async getTreeholePosts(page = 1, limit = 20) {
+    try {
+      const offset = (page - 1) * limit;
+      const result = await this.callApi("treehole_posts", {
+        method: "GET",
+        queryParams: {
+          is_active: "eq.true",
+          order: "created_at.desc",
+          limit: `${limit}`,
+          offset: `${offset}`,
+          select: "*"
+        }
+      });
+      return result || [];
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:562", "MCP: 获取树洞帖子列表失败:", error);
+      if (error.message && error.message.includes("does not exist")) {
+        return [];
+      }
+      return [];
+    }
+  }
+  // 点赞树洞帖子
+  async likeTreeholePost(postId) {
+    try {
+      const userId = this.getUserId();
+      const existingLike = await this.callApi("treehole_likes", {
+        method: "GET",
+        queryParams: {
+          post_id: `eq.${postId}`,
+          user_id: `eq.${userId}`,
+          select: "*"
+        }
+      });
+      if (existingLike && existingLike.length > 0) {
+        await this.callApi("treehole_likes", {
+          method: "DELETE",
+          queryParams: {
+            post_id: `eq.${postId}`,
+            user_id: `eq.${userId}`
+          }
+        });
+        await this.updateTreeholePostLikeCount(postId, -1);
+        return { liked: false };
+      } else {
+        await this.callApi("treehole_likes", {
+          method: "POST",
+          header: {
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+          },
+          data: {
+            post_id: postId,
+            user_id: userId,
+            created_at: (/* @__PURE__ */ new Date()).toISOString()
+          }
+        });
+        await this.updateTreeholePostLikeCount(postId, 1);
+        return { liked: true };
+      }
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:603", "MCP: 点赞树洞帖子失败:", error);
+      throw error;
+    }
+  }
+  // 更新树洞帖子点赞数
+  async updateTreeholePostLikeCount(postId, delta) {
+    try {
+      const post = await this.callApi("treehole_posts", {
+        method: "GET",
+        queryParams: {
+          id: `eq.${postId}`,
+          select: "like_count"
+        }
+      });
+      if (post && post.length > 0) {
+        const newLikeCount = Math.max(0, (post[0].like_count || 0) + delta);
+        await this.callApi("treehole_posts", {
+          method: "PATCH",
+          queryParams: {
+            id: `eq.${postId}`
+          },
+          data: {
+            like_count: newLikeCount,
+            updated_at: (/* @__PURE__ */ new Date()).toISOString()
+          }
+        });
+      }
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:631", "MCP: 更新树洞帖子点赞数失败:", error);
+    }
+  }
+  // 检查用户是否已点赞某个帖子
+  async checkUserLikedPost(postId) {
+    try {
+      const userId = this.getUserId();
+      const result = await this.callApi("treehole_likes", {
+        method: "GET",
+        queryParams: {
+          post_id: `eq.${postId}`,
+          user_id: `eq.${userId}`,
+          select: "*"
+        }
+      });
+      return result && result.length > 0;
+    } catch (error) {
+      return false;
+    }
+  }
+  // 获取树洞帖子的评论列表
+  async getTreeholeComments(postId) {
+    try {
+      const result = await this.callApi("treehole_comments", {
+        method: "GET",
+        queryParams: {
+          post_id: `eq.${postId}`,
+          order: "created_at.asc",
+          select: "*"
+        }
+      });
+      return result || [];
+    } catch (error) {
+      return [];
+    }
+  }
+  // 添加树洞评论
+  async addTreeholeComment(postId, content, isAnonymous = true) {
+    try {
+      const userId = this.getUserId();
+      const data = {
+        post_id: postId,
+        user_id: userId,
+        content,
+        is_anonymous: isAnonymous,
+        created_at: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      const result = await this.callApi("treehole_comments", {
+        method: "POST",
+        header: {
+          "Content-Type": "application/json",
+          "Prefer": "return=representation"
+        },
+        data
+      });
+      await this.updateTreeholePostCommentCount(postId, 1);
+      return result ? result[0] : null;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:685", "MCP: 添加树洞评论失败:", error);
+      throw error;
+    }
+  }
+  // 删除树洞帖子
+  async deleteTreeholePost(postId) {
+    try {
+      const userId = this.getUserId();
+      const post = await this.callApi("treehole_posts", {
+        method: "GET",
+        queryParams: {
+          id: `eq.${postId}`,
+          user_id: `eq.${userId}`,
+          select: "id"
+        }
+      });
+      if (!post || post.length === 0) {
+        throw new Error("帖子不存在或无权删除");
+      }
+      await this.callApi("treehole_posts", {
+        method: "DELETE",
+        queryParams: {
+          id: `eq.${postId}`,
+          user_id: `eq.${userId}`
+        }
+      });
+      return true;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:750", "MCP: 删除树洞帖子失败:", error);
+      throw error;
+    }
+  }
+  // 更新树洞帖子评论数
+  async updateTreeholePostCommentCount(postId, delta) {
+    try {
+      const post = await this.callApi("treehole_posts", {
+        method: "GET",
+        queryParams: {
+          id: `eq.${postId}`,
+          select: "comment_count"
+        }
+      });
+      if (post && post.length > 0) {
+        const newCommentCount = Math.max(0, (post[0].comment_count || 0) + delta);
+        await this.callApi("treehole_posts", {
+          method: "PATCH",
+          queryParams: {
+            id: `eq.${postId}`
+          },
+          data: {
+            comment_count: newCommentCount,
+            updated_at: (/* @__PURE__ */ new Date()).toISOString()
+          }
+        });
+      }
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:715", "MCP: 更新树洞帖子评论数失败:", error);
+    }
+  }
+  // ============================================
+  // 心理库文章相关方法
+  // ============================================
+  // 获取文章列表
+  async getArticles(params = {}) {
+    try {
+      const {
+        page = 1,
+        limit = 20,
+        category = null,
+        isHot = null,
+        isNew = null,
+        search = null,
+        orderBy = "created_at",
+        order = "desc"
+      } = params;
+      const queryParams = {
+        is_active: "eq.true",
+        select: "*",
+        order: `${orderBy}.${order}`,
+        limit: limit.toString(),
+        offset: ((page - 1) * limit).toString()
+      };
+      if (category && category !== "all") {
+        queryParams.category_name = `eq.${category}`;
+      }
+      if (isHot !== null) {
+        queryParams.is_hot = `eq.${isHot}`;
+      }
+      if (isNew !== null) {
+        queryParams.is_new = `eq.${isNew}`;
+      }
+      if (search && search.trim()) {
+        queryParams.title = `ilike.%${search.trim()}%`;
+      }
+      const articles = await this.callApi("articles", {
+        method: "GET",
+        queryParams
+      });
+      return articles.map((article) => ({
+        id: article.id,
+        title: article.title,
+        category: article.category_name || article.category,
+        summary: article.summary,
+        content: article.content,
+        readTime: article.read_time || 5,
+        viewCount: article.view_count || 0,
+        likeCount: article.like_count || 0,
+        favoriteCount: article.favorite_count || 0,
+        date: article.published_at || article.created_at,
+        isHot: article.is_hot || false,
+        isNew: article.is_new || false,
+        isFeatured: article.is_featured || false,
+        isFavorited: false,
+        // 需要单独查询收藏状态
+        authorName: article.author_name,
+        coverImageUrl: article.cover_image_url,
+        tags: article.tags || []
+      }));
+    } catch (error) {
+      if (error.message && error.message.includes("Could not find the table")) {
+        const errorMsg = "数据库表不存在，请先在Supabase中执行 scripts/create_library_tables_improved.sql 创建表结构";
+        common_vendor.index.__f__("error", "at utils/supabase.js:853", errorMsg);
+        throw new Error(errorMsg);
+      }
+      common_vendor.index.__f__("error", "at utils/supabase.js:853", "MCP: 获取文章列表失败:", error);
+      throw error;
+    }
+  }
+  // 获取文章详情
+  async getArticleById(articleId) {
+    try {
+      const articles = await this.callApi("articles", {
+        method: "GET",
+        queryParams: {
+          id: `eq.${articleId}`,
+          is_active: "eq.true",
+          select: "*"
+        }
+      });
+      if (!articles || articles.length === 0) {
+        throw new Error("文章不存在");
+      }
+      const article = articles[0];
+      return {
+        id: article.id,
+        title: article.title,
+        category: article.category_name || article.category,
+        summary: article.summary,
+        content: article.content,
+        readTime: article.read_time || 5,
+        viewCount: article.view_count || 0,
+        likeCount: article.like_count || 0,
+        favoriteCount: article.favorite_count || 0,
+        date: article.published_at || article.created_at,
+        isHot: article.is_hot || false,
+        isNew: article.is_new || false,
+        isFeatured: article.is_featured || false,
+        isFavorited: false,
+        // 需要单独查询收藏状态
+        authorName: article.author_name,
+        coverImageUrl: article.cover_image_url,
+        tags: article.tags || [],
+        seoKeywords: article.seo_keywords,
+        seoDescription: article.seo_description
+      };
+    } catch (error) {
+      if (error.message && error.message.includes("Could not find the table")) {
+        const errorMsg = "数据库表不存在，请先在Supabase中执行 scripts/create_library_tables_improved.sql 创建表结构";
+        common_vendor.index.__f__("error", "at utils/supabase.js:903", errorMsg);
+        throw new Error(errorMsg);
+      }
+      common_vendor.index.__f__("error", "at utils/supabase.js:903", "MCP: 获取文章详情失败:", error);
+      throw error;
+    }
+  }
+  // 检查用户是否收藏了文章
+  async checkUserFavoriteArticle(articleId) {
+    try {
+      const userId = this.getUserId();
+      const favorites = await this.callApi("article_favorites", {
+        method: "GET",
+        queryParams: {
+          article_id: `eq.${articleId}`,
+          user_id: `eq.${userId}`,
+          select: "id"
+        }
+      });
+      return favorites && favorites.length > 0;
+    } catch (error) {
+      if (error.message && error.message.includes("Could not find the table")) {
+        const errorMsg = "数据库表 article_favorites 不存在，请先在Supabase中执行 scripts/create_library_tables.sql 创建表结构";
+        common_vendor.index.__f__("error", "at utils/supabase.js:902", errorMsg);
+        throw new Error(errorMsg);
+      }
+      common_vendor.index.__f__("warn", "at utils/supabase.js:902", "MCP: 检查收藏状态失败:", error);
+      return false;
+    }
+  }
+  // 切换文章收藏状态
+  async toggleArticleFavorite(articleId) {
+    try {
+      const userId = this.getUserId();
+      const isFavorited = await this.checkUserFavoriteArticle(articleId);
+      if (isFavorited) {
+        await this.callApi("article_favorites", {
+          method: "DELETE",
+          queryParams: {
+            article_id: `eq.${articleId}`,
+            user_id: `eq.${userId}`
+          }
+        });
+        return { favorited: false };
+      } else {
+        await this.callApi("article_favorites", {
+          method: "POST",
+          data: {
+            article_id: articleId,
+            user_id: userId
+          }
+        });
+        return { favorited: true };
+      }
+    } catch (error) {
+      if (error.message && error.message.includes("Could not find the table")) {
+        const errorMsg = "数据库表 article_favorites 不存在，请先在Supabase中执行 scripts/create_library_tables.sql 创建表结构";
+        common_vendor.index.__f__("error", "at utils/supabase.js:928", errorMsg);
+        throw new Error(errorMsg);
+      }
+      common_vendor.index.__f__("error", "at utils/supabase.js:928", "MCP: 切换收藏状态失败:", error);
+      throw error;
+    }
+  }
+  // 保存阅读历史
+  async saveArticleReadHistory(articleId, readProgress = 100, readDuration = 0) {
+    try {
+      const userId = this.getUserId();
+      const existingHistory = await this.callApi("article_read_history", {
+        method: "GET",
+        queryParams: {
+          article_id: `eq.${articleId}`,
+          user_id: `eq.${userId}`,
+          select: "id,read_progress,read_duration"
+        }
+      });
+      if (existingHistory && existingHistory.length > 0) {
+        await this.callApi("article_read_history", {
+          method: "PATCH",
+          queryParams: {
+            article_id: `eq.${articleId}`,
+            user_id: `eq.${userId}`
+          },
+          data: {
+            read_progress: readProgress,
+            read_duration: (existingHistory[0].read_duration || 0) + readDuration,
+            last_read_at: (/* @__PURE__ */ new Date()).toISOString()
+          }
+        });
+      } else {
+        await this.callApi("article_read_history", {
+          method: "POST",
+          data: {
+            article_id: articleId,
+            user_id: userId,
+            read_progress: readProgress,
+            read_duration: readDuration,
+            last_read_at: (/* @__PURE__ */ new Date()).toISOString()
+          }
+        });
+      }
+      await this.increaseArticleViewCount(articleId);
+      return true;
+    } catch (error) {
+      if (error.message && error.message.includes("Could not find the table")) {
+        const errorMsg = "数据库表 article_read_history 不存在，请先在Supabase中执行 scripts/create_library_tables.sql 创建表结构";
+        common_vendor.index.__f__("error", "at utils/supabase.js:955", errorMsg);
+        throw new Error(errorMsg);
+      }
+      common_vendor.index.__f__("error", "at utils/supabase.js:955", "MCP: 保存阅读历史失败:", error);
+      return false;
+    }
+  }
+  // 增加文章浏览数
+  async increaseArticleViewCount(articleId) {
+    try {
+      const articles = await this.callApi("articles", {
+        method: "GET",
+        queryParams: {
+          id: `eq.${articleId}`,
+          select: "view_count"
+        }
+      });
+      if (articles && articles.length > 0) {
+        const newViewCount = (articles[0].view_count || 0) + 1;
+        await this.callApi("articles", {
+          method: "PATCH",
+          queryParams: {
+            id: `eq.${articleId}`
+          },
+          data: {
+            view_count: newViewCount,
+            updated_at: (/* @__PURE__ */ new Date()).toISOString()
+          }
+        });
+      }
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:940", "MCP: 增加浏览数失败:", error);
+    }
+  }
+  // 获取用户收藏的文章列表
+  async getUserFavoriteArticles(page = 1, limit = 20) {
+    try {
+      const userId = this.getUserId();
+      const favorites = await this.callApi("article_favorites", {
+        method: "GET",
+        queryParams: {
+          user_id: `eq.${userId}`,
+          select: "article_id,created_at,articles(*)",
+          order: "created_at.desc",
+          limit: limit.toString(),
+          offset: ((page - 1) * limit).toString()
+        }
+      });
+      return favorites.map((fav) => {
+        const article = fav.articles;
+        if (!article || !article.is_active)
+          return null;
+        return {
+          id: article.id,
+          title: article.title,
+          category: article.category_name || article.category,
+          summary: article.summary,
+          content: article.content,
+          readTime: article.read_time || 5,
+          viewCount: article.view_count || 0,
+          likeCount: article.like_count || 0,
+          favoriteCount: article.favorite_count || 0,
+          date: article.published_at || article.created_at,
+          isHot: article.is_hot || false,
+          isNew: article.is_new || false,
+          isFeatured: article.is_featured || false,
+          isFavorited: true,
+          authorName: article.author_name,
+          coverImageUrl: article.cover_image_url,
+          tags: article.tags || [],
+          favoritedAt: fav.created_at
+        };
+      }).filter((article) => article !== null);
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:990", "MCP: 获取收藏文章失败:", error);
+      throw error;
+    }
+  }
+  // 获取用户统计数据
+  async getUserStats() {
+    try {
+      const userId = this.getUserId();
+      const [treeholeCount, favoriteCount, readHistoryCount, conversationCount, moodRecordCount] = await Promise.all([
+        // 树洞帖子数
+        this.callApi("treehole_posts", {
+          method: "GET",
+          queryParams: {
+            user_id: `eq.${userId}`,
+            is_active: "eq.true",
+            select: "id"
+          }
+        }).then((result) => result ? result.length : 0).catch(() => 0),
+        // 收藏文章数
+        this.callApi("article_favorites", {
+          method: "GET",
+          queryParams: {
+            user_id: `eq.${userId}`,
+            select: "id"
+          }
+        }).then((result) => result ? result.length : 0).catch(() => 0),
+        // 阅读历史数
+        this.callApi("article_read_history", {
+          method: "GET",
+          queryParams: {
+            user_id: `eq.${userId}`,
+            select: "id"
+          }
+        }).then((result) => result ? result.length : 0).catch(() => 0),
+        // 对话数
+        this.getUserConversations().then((conversations) => conversations ? conversations.length : 0).catch(() => 0),
+        // 心情记录数
+        this.callApi("mood_records", {
+          method: "GET",
+          queryParams: {
+            user_id: `eq.${userId}`,
+            select: "id"
+          }
+        }).then((result) => result ? result.length : 0).catch(() => 0)
+      ]);
+      return {
+        treeholeCount,
+        favoriteCount,
+        readHistoryCount,
+        conversationCount,
+        moodRecordCount
+      };
+    } catch (error) {
+      common_vendor.index.__f__("warn", "at utils/supabase.js:1122", "MCP: 获取用户统计失败:", error);
+      return {
+        treeholeCount: 0,
+        favoriteCount: 0,
+        readHistoryCount: 0,
+        conversationCount: 0,
+        moodRecordCount: 0
+      };
+    }
+  }
+  // ============================================
+  // 心情记录相关方法
+  // ============================================
+  // 创建心情记录
+  async createMoodRecord(moodData) {
+    try {
+      const userId = this.getUserId();
+      const data = {
+        user_id: userId,
+        mood_type: moodData.moodType || "neutral",
+        mood_score: moodData.moodScore || 5,
+        note: moodData.note || null,
+        weather: moodData.weather || null,
+        location: moodData.location || null,
+        tags: moodData.tags || [],
+        created_at: (/* @__PURE__ */ new Date()).toISOString(),
+        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      const result = await this.callApi("mood_records", {
+        method: "POST",
+        data
+      });
+      return result && result.length > 0 ? result[0] : null;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:1200", "MCP: 创建心情记录失败:", error);
+      throw error;
+    }
+  }
+  // 获取用户心情记录列表
+  async getUserMoodRecords(page = 1, limit = 20, startDate = null, endDate = null) {
+    try {
+      const userId = this.getUserId();
+      const queryParams = {
+        user_id: `eq.${userId}`,
+        order: "created_at.desc",
+        limit: limit.toString(),
+        offset: ((page - 1) * limit).toString(),
+        select: "*"
+      };
+      if (startDate) {
+        queryParams.created_at = `gte.${startDate}`;
+      }
+      if (endDate) {
+        queryParams.created_at = queryParams.created_at ? `${queryParams.created_at},lte.${endDate}` : `lte.${endDate}`;
+      }
+      const result = await this.callApi("mood_records", {
+        method: "GET",
+        queryParams
+      });
+      return result || [];
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:1230", "MCP: 获取心情记录失败:", error);
+      if (error.message && error.message.includes("Could not find the table")) {
+        return [];
+      }
+      throw error;
+    }
+  }
+  // 删除心情记录
+  async deleteMoodRecord(recordId) {
+    try {
+      const userId = this.getUserId();
+      const records = await this.callApi("mood_records", {
+        method: "GET",
+        queryParams: {
+          id: `eq.${recordId}`,
+          user_id: `eq.${userId}`,
+          select: "id"
+        }
+      });
+      if (!records || records.length === 0) {
+        throw new Error("记录不存在或无权限删除");
+      }
+      await this.callApi("mood_records", {
+        method: "DELETE",
+        queryParams: {
+          id: `eq.${recordId}`
+        }
+      });
+      return true;
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:1260", "MCP: 删除心情记录失败:", error);
+      throw error;
+    }
+  }
+  // 获取心情统计
+  async getMoodStats(startDate = null, endDate = null) {
+    try {
+      const userId = this.getUserId();
+      const queryParams = {
+        user_id: `eq.${userId}`,
+        select: "mood_type,mood_score,created_at"
+      };
+      if (startDate) {
+        queryParams.created_at = `gte.${startDate}`;
+      }
+      if (endDate) {
+        queryParams.created_at = queryParams.created_at ? `${queryParams.created_at},lte.${endDate}` : `lte.${endDate}`;
+      }
+      const records = await this.callApi("mood_records", {
+        method: "GET",
+        queryParams
+      });
+      if (!records || records.length === 0) {
+        return {
+          total: 0,
+          averageScore: 5,
+          moodDistribution: {},
+          recentMood: null
+        };
+      }
+      const moodDistribution = {};
+      let totalScore = 0;
+      let count = 0;
+      records.forEach((record) => {
+        const moodType = record.mood_type || "neutral";
+        moodDistribution[moodType] = (moodDistribution[moodType] || 0) + 1;
+        if (record.mood_score) {
+          totalScore += record.mood_score;
+          count++;
+        }
+      });
+      return {
+        total: records.length,
+        averageScore: count > 0 ? Math.round(totalScore / count * 10) / 10 : 5,
+        moodDistribution,
+        recentMood: records.length > 0 ? records[0] : null
+      };
+    } catch (error) {
+      common_vendor.index.__f__("warn", "at utils/supabase.js:1305", "MCP: 获取心情统计失败:", error);
+      return {
+        total: 0,
+        averageScore: 5,
+        moodDistribution: {},
+        recentMood: null
+      };
+    }
+  }
+  // 获取用户阅读历史
+  async getUserReadHistory(page = 1, limit = 20) {
+    try {
+      const userId = this.getUserId();
+      const history = await this.callApi("article_read_history", {
+        method: "GET",
+        queryParams: {
+          user_id: `eq.${userId}`,
+          select: "article_id,read_progress,read_duration,last_read_at,created_at,articles(*)",
+          order: "last_read_at.desc",
+          limit: limit.toString(),
+          offset: ((page - 1) * limit).toString()
+        }
+      });
+      return history.map((h) => {
+        const article = h.articles;
+        if (!article || !article.is_active)
+          return null;
+        return {
+          id: article.id,
+          title: article.title,
+          category: article.category_name || article.category,
+          summary: article.summary,
+          content: article.content,
+          readTime: article.read_time || 5,
+          viewCount: article.view_count || 0,
+          likeCount: article.like_count || 0,
+          favoriteCount: article.favorite_count || 0,
+          date: article.published_at || article.created_at,
+          isHot: article.is_hot || false,
+          isNew: article.is_new || false,
+          isFeatured: article.is_featured || false,
+          isFavorited: false,
+          // 需要单独查询
+          authorName: article.author_name,
+          coverImageUrl: article.cover_image_url,
+          tags: article.tags || [],
+          readProgress: h.read_progress || 0,
+          readDuration: h.read_duration || 0,
+          lastReadAt: h.last_read_at
+        };
+      }).filter((article) => article !== null);
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:1030", "MCP: 获取阅读历史失败:", error);
+      throw error;
+    }
+  }
+  // 获取热门文章
+  async getHotArticles(limit = 5) {
+    try {
+      return await this.getArticles({
+        isHot: true,
+        limit,
+        orderBy: "view_count",
+        order: "desc"
+      });
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:1045", "MCP: 获取热门文章失败:", error);
+      throw error;
+    }
+  }
+  // 获取新文章
+  async getNewArticles(limit = 10) {
+    try {
+      return await this.getArticles({
+        isNew: true,
+        limit,
+        orderBy: "created_at",
+        order: "desc"
+      });
+    } catch (error) {
+      common_vendor.index.__f__("error", "at utils/supabase.js:1058", "MCP: 获取新文章失败:", error);
+      throw error;
+    }
+  }
 }
 class ConversationService {
   constructor() {
@@ -405,7 +1266,8 @@ class ConversationService {
   // 创建对话
   async createConversation(title, roleId, styleId) {
     try {
-      const result = await this.supabaseService.createConversation(title, roleId, styleId);
+      const defaultStyleId = styleId || "friendly";
+      const result = await this.supabaseService.createConversation(title, roleId, defaultStyleId);
       common_vendor.index.__f__("log", "at utils/supabase.js:571", "创建对话成功:", result);
       return result;
     } catch (error) {

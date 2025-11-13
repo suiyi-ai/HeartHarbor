@@ -12,7 +12,9 @@
       "outputPath": ""
     },
     "useCompilerPlugins": false,
-    "minifyWXML": true
+    "minifyWXML": true,
+    "ignoreDevUnusedFiles": false,
+    "ignoreUploadUnusedFiles": false
   },
   "compileType": "miniprogram",
   "simulatorPluginLibVersion": {},
@@ -21,5 +23,17 @@
     "include": []
   },
   "appid": "wxdbe0ea5c455ff2b5",
-  "editorSetting": {}
+  "editorSetting": {},
+  "condition": {
+    "miniprogram": {
+      "list": [
+        {
+          "name": "文章详情页",
+          "pathName": "pages/library/article-detail",
+          "query": "id=1&title=测试文章",
+          "launchMode": "default"
+        }
+      ]
+    }
+  }
 }

@@ -33,6 +33,15 @@
 			}
 		},
 		{
+			"path": "pages/library/article-detail",
+			"style": {
+				"navigationBarTitleText": "文章详情",
+				"navigationBarBackgroundColor": "#E6F3FF",
+				"navigationBarTextStyle": "black",
+				"enablePullDownRefresh": false
+			}
+		},
+		{
 			"path": "pages/mine/mine",
 			"style": {
 				"navigationBarTitleText": "我的",
@@ -57,9 +66,25 @@
 			}
 		},
 		{
-			"path": "pages/virtual-human/virtual-human",
+			"path": "pages/mood/mood",
 			"style": {
-				"navigationBarTitleText": "虚拟人伙伴",
+				"navigationBarTitleText": "心情记录",
+				"navigationBarBackgroundColor": "#E6F3FF",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/favorites/favorites",
+			"style": {
+				"navigationBarTitleText": "我的收藏",
+				"navigationBarBackgroundColor": "#E6F3FF",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/virtual-human/xf-virtual-human",
+			"style": {
+				"navigationBarTitleText": "讯飞虚拟人",
 				"navigationBarBackgroundColor": "#E6F3FF",
 				"navigationBarTextStyle": "black",
 				"enablePullDownRefresh": false

@@ -11,9 +11,13 @@
     "build:mp-weixin": "cross-env NODE_ENV=production UNI_PLATFORM=mp-weixin vue-cli-service uni-build"
   },
   "dependencies": {
+    "crypto-js": "^4.2.0",
     "vue": "^2.7.16"
   },
   "devDependencies": {
+    "@dcloudio/uni-cli-shared": "^2.0.0-32220200911001",
+    "@dcloudio/uni-mp-weixin": "^2.0.0-32220200911001",
+    "@dcloudio/vue-cli-plugin-uni": "^2.0.0-32220200911001",
     "@vue/cli-service": "^4.5.19",
     "cross-env": "^7.0.3"
   },

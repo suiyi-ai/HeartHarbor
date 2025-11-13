@@ -222,71 +222,7 @@
 	line-height: 1.4;
 }
 
-/* 风格设置区样�?- 优化�?*/
-.style-section.data-v-fdb58938 {
-	margin-bottom: 35rpx;
-	background: rgba(255, 255, 255, 0.95);
-	border-radius: 25rpx;
-	padding: 30rpx;
-	border: 2rpx solid #E6F3FF;
-	box-shadow: 0 8rpx 30rpx rgba(24, 144, 255, 0.1);
-}
-.style-tags.data-v-fdb58938 {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 20rpx;
-	justify-content: center;
-}
-.style-tag.data-v-fdb58938 {
-	display: flex;
-	align-items: center;
-	padding: 25rpx 30rpx;
-	background: #F8F9FA;
-	border-radius: 20rpx;
-	border: 2rpx solid transparent;
-	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	min-width: 180rpx;
-	justify-content: center;
-	cursor: pointer;
-	position: relative;
-	overflow: hidden;
-}
-.style-tag.data-v-fdb58938::before {
-	content: '';
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	height: 3rpx;
-	background: linear-gradient(90deg, #1890FF, #40A9FF);
-	transform: scaleX(0);
-	transition: transform 0.3s ease;
-}
-.style-tag.active.data-v-fdb58938 {
-	background: linear-gradient(135deg, #E6F3FF 0%, #D6EBFF 100%);
-	border-color: #1890FF;
-	transform: translateY(-5rpx);
-	box-shadow: 0 10rpx 30rpx rgba(24, 144, 255, 0.2);
-}
-.style-tag.active.data-v-fdb58938::before {
-	transform: scaleX(1);
-}
-.style-tag.data-v-fdb58938:active {
-	transform: scale(0.98);
-}
-.style-icon.data-v-fdb58938 {
-	font-size: 36rpx;
-	margin-right: 15rpx;
-	transition: transform 0.3s ease;
-}
-.style-tag.active .style-icon.data-v-fdb58938 {
-	transform: scale(1.1);
-}
-.style-name.data-v-fdb58938 {
-	font-size: 28rpx;
-	color: #333;
-	font-weight: 600;
-}
+
 
 /* 聊天容器样式 - 优化�?*/
 .chat-container.data-v-fdb58938 {
@@ -817,7 +753,7 @@ to {
 		width: 100%;
 		order: 2;
 }
-.role-section.data-v-fdb58938, .style-section.data-v-fdb58938 {
+.role-section.data-v-fdb58938 {
 		padding: 25rpx;
 		margin-bottom: 25rpx;
 }
@@ -831,10 +767,6 @@ to {
 		min-width: 180rpx; /* 小屏幕适当减小宽度 */
 		max-width: 220rpx;
 		padding: 25rpx 30rpx;
-}
-.style-tag.data-v-fdb58938 {
-		min-width: 150rpx;
-		padding: 20rpx 25rpx;
 }
 .chat-container.data-v-fdb58938 {
 		padding: 25rpx;
@@ -911,4 +843,56 @@ to {
 		height: 70rpx;
 		font-size: 26rpx;
 }
+}
+
+/* 未登录提示样式 */
+.login-prompt.data-v-fdb58938 {
+	background: #fff;
+	border-radius: 20rpx;
+	padding: 80rpx 40rpx;
+	margin: 40rpx 0;
+	box-shadow: 0 4rpx 20rpx rgba(24, 144, 255, 0.1);
+	text-align: center;
+}
+.prompt-content.data-v-fdb58938 {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+.prompt-icon.data-v-fdb58938 {
+	font-size: 100rpx;
+	margin-bottom: 30rpx;
+}
+.prompt-title.data-v-fdb58938 {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 20rpx;
+}
+.prompt-desc.data-v-fdb58938 {
+	font-size: 28rpx;
+	color: #666;
+	margin-bottom: 50rpx;
+	line-height: 1.6;
+}
+.login-buttons.data-v-fdb58938 {
+	display: flex;
+	gap: 30rpx;
+	width: 100%;
+}
+.login-buttons button.data-v-fdb58938 {
+	flex: 1;
+	height: 80rpx;
+	border-radius: 40rpx;
+	font-size: 30rpx;
+	border: none;
+}
+.login-buttons .login-btn.data-v-fdb58938 {
+	background: linear-gradient(135deg, #1890FF 0%, #40A9FF 100%);
+	color: white;
+}
+.login-buttons .register-btn.data-v-fdb58938 {
+	background: #fff;
+	color: #1890FF;
+	border: 2rpx solid #1890FF;
 }
